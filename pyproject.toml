@@ -1,0 +1,51 @@
+[project]
+name = "local-rag-research-assistant"
+version = "0.1.0"
+description = "A local-first retrieval-augmented generation research assistant."
+authors = [
+    {name = "RazinRahat",email = "razinrahat2001@gmail.com"}
+]
+license = "MIT"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi (>=0.141.1,<0.142.0)",
+    "uvicorn (>=0.53.0,<0.54.0)",
+    "pydantic-settings (>=2.15.0,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.1.1,<10.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)",
+    "ruff (>=0.16.8,<0.17.0)",
+    "mypy (>=2.3.1,<3.0.0)",
+    "httpx (>=0.28.1,<0.29.0)"
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "UP",
+]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-ra"

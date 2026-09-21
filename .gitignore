@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# RAG data
+data/documents/*
+data/processed/*
+data/vector_store/*
+
+# Keep directory structure
+!data/documents/.gitkeep
+!data/processed/.gitkeep
+!data/vector_store/.gitkeep
+
+# Models / generated artifacts
+models/
+*.bin
+*.safetensors
+
+# Logs
+*.log
+logs/
