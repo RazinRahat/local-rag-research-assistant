@@ -2,11 +2,11 @@
 
 A local-first research assistant for querying and analysing research documents using Retrieval-Augmented Generation (RAG).
 
-The project is being built component by component to explore the engineering behind document processing, retrieval, grounded generation, citations, and RAG evaluation without hiding the core pipeline behind a high-level framework.
+The project is being built component by component to explore the engineering behind document processing, semantic retrieval, grounded generation, citations, and RAG evaluation without hiding the core pipeline behind a high-level RAG framework.
 
 ## Current Status
 
-**Phase 2 complete — document ingestion and token-aware chunking.**
+**Phase 3 complete — local document embeddings.**
 
 ```text
 PDF
@@ -15,9 +15,11 @@ Page Extraction
  ↓
 Text Normalisation
  ↓
-Token-Aware Chunking
+Model-Aware Chunking
  ↓
-Embeddings        ← next
+Local Embeddings
+ ↓
+Vector Store        ← next
  ↓
 Retrieval
  ↓
@@ -30,22 +32,24 @@ Grounded Answer + Citations
 
 ## Current Features
 
-* PDF validation and page-level extraction
+* PDF validation and page-level text extraction
 * PDF metadata extraction
 * SHA-256 document fingerprinting
-* Text normalisation
+* Conservative text normalisation
 * Page provenance preservation
-* Detection of encrypted and non-text pages
-* Typed internal document models
-* Token-aware document chunking
-* Configurable chunk size and overlap
+* Encrypted and non-text page detection
+* Typed document and chunk models
+* Configurable token-aware chunking
+* Model-aware Hugging Face tokenisation
 * Deterministic chunk identifiers
-* Page-level chunk provenance
-* Automated tests and strict static type checking
+* Local BGE embedding generation
+* Normalised document and query embeddings
+* Batched embedding inference
+* Strict type checking and automated tests
 
 ## Architecture
 
-The project currently converts research PDFs into structured retrieval units:
+The current pipeline converts research PDFs into semantic representations while preserving their source information:
 
 ```text
 PDF
@@ -53,18 +57,21 @@ PDF
  ▼
 ParsedDocument
  │
- ├── DocumentMetadata
- │
  └── DocumentPage[]
           │
           ▼
-     Tokenizer
+     DocumentChunk[]
           │
           ▼
-    DocumentChunk[]
+     Embedding Model
+          │
+          ▼
+     ChunkEmbedding[]
 ```
 
-Each chunk retains its source document, page number, token range, and position within the document so later retrieval results can be traced back to their original source.
+Each embedded chunk retains its document identity, page number, text, and chunk identifier so later retrieval results can be traced back to their original source.
+
+See [System Architecture](docs/architecture.md) for the deeper design.
 
 ## Tech Stack
 
@@ -72,13 +79,16 @@ Each chunk retains its source document, page number, token range, and position w
 * FastAPI
 * Pydantic
 * PyMuPDF
-* tiktoken
+* Hugging Face Transformers
+* Sentence Transformers
+* BGE embeddings
+* NumPy
 * Poetry
 * Pytest
 * Ruff
 * Mypy
 
-RAG infrastructure will be introduced incrementally as the project develops.
+Additional retrieval and generation infrastructure will be introduced incrementally.
 
 ## Project Structure
 
@@ -87,17 +97,21 @@ src/research_assistant/
 ├── main.py
 ├── config.py
 ├── ingestion/
-│   ├── models.py
-│   ├── normalizer.py
-│   └── pdf_loader.py
-└── chunking/
-    ├── models.py
-    ├── tokenizer.py
-    └── chunker.py
+├── chunking/
+└── embeddings/
 
 tests/
 ├── ingestion/
-└── chunking/
+├── chunking/
+└── embeddings/
+
+docs/
+├── architecture.md
+├── ingestion.md
+├── chunking.md
+├── embeddings.md
+├── experiments.md
+└── roadmap.md
 ```
 
 ## Development
@@ -114,7 +128,7 @@ Run the API:
 poetry run uvicorn research_assistant.main:app --reload --app-dir src
 ```
 
-Run the quality checks:
+Run the quality gate:
 
 ```bash
 poetry run ruff check .
@@ -131,7 +145,18 @@ Research documents can be placed in:
 data/documents/
 ```
 
-Document contents, generated data, environment files, and local vector stores are excluded from version control.
+Document contents, generated stores, model artifacts, and environment files are excluded from version control.
+
+## Documentation
+
+Deeper implementation details are available in:
+
+* [System Architecture](docs/architecture.md)
+* [Document Ingestion](docs/ingestion.md)
+* [Document Chunking](docs/chunking.md)
+* [Embeddings](docs/embeddings.md)
+* [Experiments](docs/experiments.md)
+* [Development Roadmap](docs/roadmap.md)
 
 ## Roadmap
 
@@ -139,33 +164,31 @@ Document contents, generated data, environment files, and local vector stores ar
 
 * Project foundation
 * PDF ingestion
-* Document representation
 * Token-aware chunking
+* Local embedding generation
 
 **Next**
 
-* Local embedding generation
-* Vector storage
+* Persistent vector storage
 * Semantic retrieval
 * End-to-end RAG querying
 
 **Later**
 
 * Hybrid retrieval and reranking
-* Grounded source citations
-* RAG evaluation and retrieval benchmarking
-* Research-specific synthesis features
+* Grounded citations
+* RAG evaluation and benchmarking
+* Research-specific synthesis
 * Local LLM integration
 * API and user interface
 * Observability and containerisation
 
-## Design Approach
+## Design Principles
 
-The project follows three main principles:
-
-* **Local first:** research documents should remain on the user's machine where possible.
-* **Preserve provenance:** retrieved information should remain traceable to its original document and page.
-* **Measure instead of guess:** chunking, retrieval, and later RAG components will be evaluated experimentally rather than selected only by intuition.
+* **Local first:** keep research documents on the user's machine where possible.
+* **Preserve provenance:** retrieved evidence should remain traceable to its source document and page.
+* **Understand before abstracting:** implement the core pipeline before introducing high-level RAG frameworks.
+* **Measure instead of guess:** retrieval and chunking decisions should eventually be driven by experiments.
 
 ---
 
