@@ -22,11 +22,22 @@ analysing, and synthesising research documents.
 
 - Python
 - FastAPI
+- PyMuPDF
+- Pydantic
 - Pytest
 - Ruff
 - Mypy
 
 Additional RAG infrastructure will be added incrementally.
+
+## Current Capabilities
+
+- PDF validation
+- Page-level text extraction
+- PDF metadata extraction
+- Document fingerprinting with SHA-256
+- Conservative text normalization
+- Page provenance preservation
 
 ## Development
 
@@ -34,3 +45,4 @@ Install dependencies:
 
 ```bash
 poetry install
+
