@@ -6,7 +6,7 @@ The project is being built component by component to explore the engineering beh
 
 ## Current Status
 
-**Phase 3 complete — local document embeddings.**
+**Phase 4 complete — persistent vector storage.**
 
 ```text
 PDF
@@ -19,9 +19,9 @@ Model-Aware Chunking
  ↓
 Local Embeddings
  ↓
-Vector Store        ← next
+Persistent Vector Store
  ↓
-Retrieval
+Semantic Retrieval     ← next
  ↓
 Reranking
  ↓
@@ -45,11 +45,15 @@ Grounded Answer + Citations
 * Local BGE embedding generation
 * Normalised document and query embeddings
 * Batched embedding inference
+* Persistent Qdrant vector storage
+* Vector collection validation
+* Document-level vector replacement and deletion
+* Persistent chunk text and provenance metadata
 * Strict type checking and automated tests
 
 ## Architecture
 
-The current pipeline converts research PDFs into semantic representations while preserving their source information:
+The current pipeline converts research PDFs into persistent semantic representations while preserving their source information:
 
 ```text
 PDF
@@ -67,11 +71,15 @@ ParsedDocument
           │
           ▼
      ChunkEmbedding[]
+          │
+          ▼
+        Qdrant
+   vector + payload
 ```
 
-Each embedded chunk retains its document identity, page number, text, and chunk identifier so later retrieval results can be traced back to their original source.
+Each stored vector retains enough metadata to trace it back to its original chunk, page, and source document.
 
-See [System Architecture](docs/architecture.md) for the deeper design.
+See [System Architecture](docs/architecture.md) for the broader design.
 
 ## Tech Stack
 
@@ -83,6 +91,7 @@ See [System Architecture](docs/architecture.md) for the deeper design.
 * Sentence Transformers
 * BGE embeddings
 * NumPy
+* Qdrant
 * Poetry
 * Pytest
 * Ruff
@@ -98,18 +107,21 @@ src/research_assistant/
 ├── config.py
 ├── ingestion/
 ├── chunking/
-└── embeddings/
+├── embeddings/
+└── vector_store/
 
 tests/
 ├── ingestion/
 ├── chunking/
-└── embeddings/
+├── embeddings/
+└── vector_store/
 
 docs/
 ├── architecture.md
 ├── ingestion.md
 ├── chunking.md
 ├── embeddings.md
+├── vector-store.md
 ├── experiments.md
 └── roadmap.md
 ```
@@ -137,12 +149,18 @@ poetry run mypy
 poetry run pytest
 ```
 
-## Local Documents
+## Local Documents and Data
 
 Research documents can be placed in:
 
 ```text
 data/documents/
+```
+
+The persistent local vector store is created under:
+
+```text
+data/vector_store/
 ```
 
 Document contents, generated stores, model artifacts, and environment files are excluded from version control.
@@ -155,6 +173,7 @@ Deeper implementation details are available in:
 * [Document Ingestion](docs/ingestion.md)
 * [Document Chunking](docs/chunking.md)
 * [Embeddings](docs/embeddings.md)
+* [Vector Storage](docs/vector-store.md)
 * [Experiments](docs/experiments.md)
 * [Development Roadmap](docs/roadmap.md)
 
@@ -166,12 +185,13 @@ Deeper implementation details are available in:
 * PDF ingestion
 * Token-aware chunking
 * Local embedding generation
+* Persistent vector storage
 
 **Next**
 
-* Persistent vector storage
 * Semantic retrieval
 * End-to-end RAG querying
+* Local LLM integration
 
 **Later**
 
@@ -179,7 +199,6 @@ Deeper implementation details are available in:
 * Grounded citations
 * RAG evaluation and benchmarking
 * Research-specific synthesis
-* Local LLM integration
 * API and user interface
 * Observability and containerisation
 
