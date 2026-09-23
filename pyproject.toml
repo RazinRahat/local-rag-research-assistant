@@ -12,7 +12,10 @@ dependencies = [
     "uvicorn (>=0.53.0,<0.54.0)",
     "pydantic-settings (>=2.15.0,<3.0.0)",
     "pymupdf (>=1.28.2,<2.0.0)",
-    "tiktoken (>=0.14.0,<0.15.0)"
+    "tiktoken (>=0.14.0,<0.15.0)",
+    "sentence-transformers (>=6.1.0,<7.0.0)",
+    "transformers (>=5.17.0,<6.0.0)",
+    "numpy (>=2.5.3,<3.0.0)"
 ]
 
 

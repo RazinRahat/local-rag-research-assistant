@@ -8,8 +8,8 @@ class ChunkingConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    chunk_size_tokens: int = Field(default=500, ge=1)
-    chunk_overlap_tokens: int = Field(default=75, ge=0)
+    chunk_size_tokens: int = Field(default=384, ge=1)
+    chunk_overlap_tokens: int = Field(default=64, ge=0)
 
     @model_validator(mode="after")
     def validate_overlap(self) -> Self:

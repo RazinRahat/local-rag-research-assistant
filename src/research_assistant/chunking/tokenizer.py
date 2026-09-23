@@ -1,6 +1,7 @@
-from typing import Protocol
+from typing import Protocol, cast
 
 import tiktoken
+from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 
 class Tokenizer(Protocol):
@@ -36,6 +37,43 @@ class TiktokenTokenizer:
 
     def decode(self, tokens: list[int]) -> str:
         return self._encoding.decode(tokens)
+
+    def count(self, text: str) -> int:
+        return len(self.encode(text))
+
+
+class HuggingFaceTokenizer:
+    """Tokenizer backed by a Hugging Face model tokenizer."""
+
+    def __init__(self, model_name: str) -> None:
+        self._tokenizer = cast(
+            PreTrainedTokenizerBase,
+            AutoTokenizer.from_pretrained(model_name),
+        )
+
+    def encode(self, text: str) -> list[int]:
+        token_ids = self._tokenizer.encode(
+            text,
+            add_special_tokens=False,
+            truncation=False,
+            verbose=False,
+        )
+
+        return list(token_ids)
+
+    def decode(self, tokens: list[int]) -> str:
+        decoded = self._tokenizer.decode(
+            tokens,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+
+        if not isinstance(decoded, str):
+            raise TypeError(
+                "Tokenizer returned batched output for a single token sequence"
+            )
+
+        return decoded
 
     def count(self, text: str) -> int:
         return len(self.encode(text))
