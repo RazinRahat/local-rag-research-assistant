@@ -226,3 +226,133 @@ def test_local_store_persists_after_reopening(
         assert second_store.count_document(document_id) == 2
     finally:
         second_store.close()
+
+
+def _make_embedding_with_vector(
+    document_id: str,
+    chunk_index: int,
+    vector: tuple[float, ...],
+) -> ChunkEmbedding:
+    text = f"Research chunk {chunk_index}"
+
+    chunk = DocumentChunk(
+        chunk_id=(f"{document_id}-chunk-{chunk_index}"),
+        document_id=document_id,
+        file_name="paper.pdf",
+        page_number=1,
+        chunk_index=chunk_index,
+        page_chunk_index=chunk_index,
+        text=text,
+        token_count=4,
+        char_count=len(text),
+        token_start=chunk_index * 4,
+        token_end=(chunk_index + 1) * 4,
+    )
+
+    return ChunkEmbedding(
+        chunk=chunk,
+        model_name="test-model",
+        vector=vector,
+        dimension=len(vector),
+    )
+
+
+def test_search_returns_nearest_vectors() -> None:
+    client = QdrantClient(":memory:")
+    store = _make_store(client)
+
+    document_id = "document-a"
+
+    embeddings = (
+        _make_embedding_with_vector(
+            document_id,
+            0,
+            (1.0, 0.0, 0.0),
+        ),
+        _make_embedding_with_vector(
+            document_id,
+            1,
+            (0.0, 1.0, 0.0),
+        ),
+        _make_embedding_with_vector(
+            document_id,
+            2,
+            (0.0, 0.0, 1.0),
+        ),
+    )
+
+    try:
+        store.replace_document(
+            document_id=document_id,
+            embeddings=embeddings,
+        )
+
+        results = store.search(
+            query_vector=(1.0, 0.0, 0.0),
+            top_k=2,
+        )
+
+        assert len(results) == 2
+
+        assert results[0].chunk.chunk_index == 0
+
+        assert results[0].score >= results[1].score
+    finally:
+        store.close()
+
+
+def test_search_can_filter_by_document() -> None:
+    client = QdrantClient(":memory:")
+    store = _make_store(client)
+
+    first_id = "document-a"
+    second_id = "document-b"
+
+    try:
+        store.replace_document(
+            document_id=first_id,
+            embeddings=(
+                _make_embedding_with_vector(
+                    first_id,
+                    0,
+                    (1.0, 0.0, 0.0),
+                ),
+            ),
+        )
+
+        store.replace_document(
+            document_id=second_id,
+            embeddings=(
+                _make_embedding_with_vector(
+                    second_id,
+                    0,
+                    (0.99, 0.01, 0.0),
+                ),
+            ),
+        )
+
+        results = store.search(
+            query_vector=(1.0, 0.0, 0.0),
+            top_k=5,
+            document_id=second_id,
+        )
+
+        assert len(results) == 1
+
+        assert results[0].chunk.document_id == second_id
+    finally:
+        store.close()
+
+
+def test_search_rejects_wrong_query_dimension() -> None:
+    client = QdrantClient(":memory:")
+    store = _make_store(client)
+
+    try:
+        with pytest.raises(ValueError):
+            store.search(
+                query_vector=(1.0, 0.0),
+                top_k=5,
+            )
+    finally:
+        store.close()
