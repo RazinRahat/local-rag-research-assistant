@@ -6,7 +6,7 @@ The project is being built component by component to explore the engineering beh
 
 ## Current Status
 
-**Phase 4 complete — persistent vector storage.**
+**Phase 5 complete — semantic retrieval.**
 
 ```text
 PDF
@@ -21,11 +21,9 @@ Local Embeddings
  ↓
 Persistent Vector Store
  ↓
-Semantic Retrieval     ← next
+Semantic Retrieval
  ↓
-Reranking
- ↓
-Local LLM
+Local LLM              ← next
  ↓
 Grounded Answer + Citations
 ```
@@ -46,38 +44,51 @@ Grounded Answer + Citations
 * Normalised document and query embeddings
 * Batched embedding inference
 * Persistent Qdrant vector storage
-* Vector collection validation
+* Collection and embedding compatibility validation
 * Document-level vector replacement and deletion
 * Persistent chunk text and provenance metadata
+* Dense semantic retrieval
+* Configurable top-k search
+* Document-scoped retrieval
+* Typed ranked retrieval results
 * Strict type checking and automated tests
 
 ## Architecture
 
-The current pipeline converts research PDFs into persistent semantic representations while preserving their source information:
+The current pipeline converts research PDFs into searchable semantic representations while preserving their source information:
 
 ```text
-PDF
- │
- ▼
+Research PDF
+     │
+     ▼
 ParsedDocument
- │
- └── DocumentPage[]
-          │
-          ▼
-     DocumentChunk[]
-          │
-          ▼
-     Embedding Model
-          │
-          ▼
-     ChunkEmbedding[]
-          │
-          ▼
-        Qdrant
-   vector + payload
+     │
+     ▼
+DocumentPage[]
+     │
+     ▼
+DocumentChunk[]
+     │
+     ▼
+Embedding Model
+     │
+     ▼
+ChunkEmbedding[]
+     │
+     ▼
+   Qdrant
+     │
+     ▼
+Query Embedding
+     │
+     ▼
+Semantic Search
+     │
+     ▼
+RetrievalResult[]
 ```
 
-Each stored vector retains enough metadata to trace it back to its original chunk, page, and source document.
+Each retrieved result retains its source document, page number, chunk identity, original text, similarity score, and ranking.
 
 See [System Architecture](docs/architecture.md) for the broader design.
 
@@ -97,7 +108,7 @@ See [System Architecture](docs/architecture.md) for the broader design.
 * Ruff
 * Mypy
 
-Additional retrieval and generation infrastructure will be introduced incrementally.
+Additional generation, evaluation, and orchestration infrastructure will be introduced incrementally.
 
 ## Project Structure
 
@@ -108,13 +119,15 @@ src/research_assistant/
 ├── ingestion/
 ├── chunking/
 ├── embeddings/
-└── vector_store/
+├── vector_store/
+└── retrieval/
 
 tests/
 ├── ingestion/
 ├── chunking/
 ├── embeddings/
-└── vector_store/
+├── vector_store/
+└── retrieval/
 
 docs/
 ├── architecture.md
@@ -122,6 +135,7 @@ docs/
 ├── chunking.md
 ├── embeddings.md
 ├── vector-store.md
+├── retrieval.md
 ├── experiments.md
 └── roadmap.md
 ```
@@ -174,6 +188,7 @@ Deeper implementation details are available in:
 * [Document Chunking](docs/chunking.md)
 * [Embeddings](docs/embeddings.md)
 * [Vector Storage](docs/vector-store.md)
+* [Semantic Retrieval](docs/retrieval.md)
 * [Experiments](docs/experiments.md)
 * [Development Roadmap](docs/roadmap.md)
 
@@ -186,17 +201,17 @@ Deeper implementation details are available in:
 * Token-aware chunking
 * Local embedding generation
 * Persistent vector storage
+* Semantic retrieval
 
 **Next**
 
-* Semantic retrieval
-* End-to-end RAG querying
 * Local LLM integration
+* End-to-end RAG querying
+* Grounded citations
 
 **Later**
 
 * Hybrid retrieval and reranking
-* Grounded citations
 * RAG evaluation and benchmarking
 * Research-specific synthesis
 * API and user interface
