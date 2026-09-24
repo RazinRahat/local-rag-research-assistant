@@ -4,6 +4,9 @@ from uuid import NAMESPACE_URL, uuid5
 
 from qdrant_client import QdrantClient, models
 
+from research_assistant.chunking.models import (
+    DocumentChunk,
+)
 from research_assistant.embeddings.models import (
     ChunkEmbedding,
 )
@@ -12,8 +15,88 @@ from research_assistant.vector_store.exceptions import (
     EmbeddingBatchError,
 )
 from research_assistant.vector_store.models import (
+    VectorSearchResult,
     VectorStoreConfig,
 )
+
+
+def _required_str(
+    payload: dict[str, Any],
+    key: str,
+) -> str:
+    value = payload.get(key)
+
+    if not isinstance(value, str):
+        raise ValueError(f"Expected payload field '{key}' to contain a string")
+
+    return value
+
+
+def _required_int(
+    payload: dict[str, Any],
+    key: str,
+) -> int:
+    value = payload.get(key)
+
+    if not isinstance(value, int):
+        raise ValueError(f"Expected payload field '{key}' to contain an integer")
+
+    return value
+
+
+def _payload_to_chunk(
+    payload: dict[str, Any],
+) -> DocumentChunk:
+    """Reconstruct a document chunk from persisted payload."""
+
+    text = _required_str(
+        payload,
+        "text",
+    )
+
+    return DocumentChunk(
+        chunk_id=_required_str(
+            payload,
+            "chunk_id",
+        ),
+        document_id=_required_str(
+            payload,
+            "document_id",
+        ),
+        file_name=_required_str(
+            payload,
+            "file_name",
+        ),
+        page_number=_required_int(
+            payload,
+            "page_number",
+        ),
+        chunk_index=_required_int(
+            payload,
+            "chunk_index",
+        ),
+        page_chunk_index=_required_int(
+            payload,
+            "page_chunk_index",
+        ),
+        text=text,
+        token_count=_required_int(
+            payload,
+            "token_count",
+        ),
+        char_count=_required_int(
+            payload,
+            "char_count",
+        ),
+        token_start=_required_int(
+            payload,
+            "token_start",
+        ),
+        token_end=_required_int(
+            payload,
+            "token_end",
+        ),
+    )
 
 
 def _point_id(chunk_id: str) -> str:
@@ -219,3 +302,66 @@ class QdrantVectorStore:
         """Close the Qdrant client."""
 
         self._client.close()
+
+    def search(
+        self,
+        query_vector: Sequence[float],
+        top_k: int,
+        score_threshold: float | None = None,
+        document_id: str | None = None,
+    ) -> tuple[VectorSearchResult, ...]:
+        """Search for chunks nearest to the query vector."""
+
+        if top_k < 1:
+            raise ValueError("top_k must be at least 1")
+
+        if len(query_vector) != self._config.vector_size:
+            raise ValueError(
+                "Query vector dimension does not match the vector-store configuration"
+            )
+
+        if not self._client.collection_exists(self._config.collection_name):
+            return ()
+
+        query_filter = None
+
+        if document_id is not None:
+            query_filter = _document_filter(document_id)
+
+        response = self._client.query_points(
+            collection_name=(self._config.collection_name),
+            query=list(query_vector),
+            query_filter=query_filter,
+            limit=top_k,
+            score_threshold=score_threshold,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        results: list[VectorSearchResult] = []
+
+        for point in response.points:
+            payload = point.payload
+
+            if payload is None:
+                raise ValueError("Vector search result is missing payload")
+
+            payload_dict = dict(payload)
+
+            chunk = _payload_to_chunk(payload_dict)
+
+            embedding_model = _required_str(
+                payload_dict,
+                "embedding_model",
+            )
+
+            results.append(
+                VectorSearchResult(
+                    point_id=str(point.id),
+                    score=float(point.score),
+                    chunk=chunk,
+                    embedding_model=embedding_model,
+                )
+            )
+
+        return tuple(results)

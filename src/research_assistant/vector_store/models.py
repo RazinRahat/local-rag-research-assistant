@@ -2,6 +2,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from research_assistant.chunking.models import DocumentChunk
+
 
 class VectorStoreConfig(BaseModel):
     """Configuration for persistent vector storage."""
@@ -18,3 +20,17 @@ class VectorStoreConfig(BaseModel):
         default=384,
         ge=1,
     )
+
+
+class VectorSearchResult(BaseModel):
+    """Vector-store search result independent of database implementation."""
+
+    model_config = ConfigDict(frozen=True)
+
+    point_id: str
+
+    score: float
+
+    chunk: DocumentChunk
+
+    embedding_model: str
