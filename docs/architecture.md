@@ -4,7 +4,7 @@
 
 The Local RAG Research Assistant is designed as a modular, local-first Retrieval-Augmented Generation system for working with research documents.
 
-Rather than treating RAG as a single black-box operation, the application separates document ingestion, chunking, embeddings, persistence, retrieval, generation, citations, and evaluation into independently testable components.
+Rather than treating RAG as a single black-box operation, the application separates document ingestion, chunking, embeddings, persistence, retrieval, context construction, generation, citations, and evaluation into independently testable components.
 
 The intended full architecture is:
 
@@ -53,15 +53,15 @@ The intended full architecture is:
                     Citations + Evidence
 ```
 
-The project is being implemented incrementally so each layer can be understood and validated before additional orchestration is introduced.
+The project is implemented incrementally so each layer can be understood, tested, and validated before additional orchestration is introduced.
 
 ---
 
-## Design Boundaries
+# Design Boundaries
 
 The system deliberately separates its major responsibilities.
 
-### Ingestion
+## Ingestion
 
 The ingestion layer converts external research documents into the application's canonical representation.
 
@@ -87,7 +87,7 @@ Later document formats should be able to enter through this boundary without cha
 
 ---
 
-### Chunking
+## Chunking
 
 The chunking layer converts parsed pages into retrieval-sized textual units.
 
@@ -106,15 +106,25 @@ Each chunk preserves:
 * document identity
 * filename
 * page number
-* chunk position
+* global chunk position
+* page-local chunk position
 * token range
 * source text
 
-This maintains the provenance required for later retrieval and citation generation.
+This maintains the provenance required for retrieval and citation generation.
+
+The current working baseline uses model-aware tokenisation with approximately:
+
+```text
+384 content tokens
+64-token overlap
+```
+
+These values are baselines rather than claimed optimal settings and will later be evaluated experimentally.
 
 ---
 
-### Embeddings
+## Embeddings
 
 The embedding layer converts chunks and natural-language queries into dense vector representations.
 
@@ -134,13 +144,21 @@ BAAI/bge-small-en-v1.5
 
 through Sentence Transformers.
 
-The embedding provider is abstracted so models can later be compared or replaced without rewriting storage or retrieval logic.
+The baseline produces:
+
+```text
+384-dimensional embeddings
+```
+
+Document passages and queries are represented through separate embedding-provider operations.
+
+The embedding provider is abstracted so models can later be compared or replaced without rewriting persistence, retrieval, or RAG orchestration.
 
 Document and query embeddings are normalised before similarity search.
 
 ---
 
-### Vector Storage
+## Vector Storage
 
 The vector-store layer persists document embeddings and their source metadata.
 
@@ -168,20 +186,23 @@ The current implementation uses persistent local Qdrant storage.
 
 The vector-store boundary supports:
 
-* collection creation and validation
-* embedding compatibility checks
-* document insertion
+* collection creation
+* collection compatibility validation
+* embedding-model compatibility checks
+* vector insertion
 * document replacement
 * document deletion
 * persistent storage
-* metadata filtering
-* vector search
+* document filtering
+* vector similarity search
 
-The application does not expose Qdrant-specific objects outside this layer.
+The application does not expose Qdrant-specific result objects outside this layer.
+
+Stored chunk text means retrieved evidence can be reconstructed directly from the vector-store payload without re-opening the original PDF during every query.
 
 ---
 
-### Retrieval
+## Retrieval
 
 The retrieval layer converts a natural-language question into ranked source evidence.
 
@@ -199,14 +220,16 @@ RetrievalResult[]
 
 The current baseline implements dense semantic retrieval using BGE query embeddings and Qdrant cosine search.
 
-Retrieval supports:
+Retrieval currently supports:
 
 * configurable top-k
 * similarity scores
-* document-scoped search
 * optional score thresholds
+* document-scoped search
 * typed ranked results
 * reconstruction of source provenance
+
+The current implementation is intentionally a clear dense-retrieval baseline.
 
 The planned retrieval stack will later evolve toward:
 
@@ -220,11 +243,11 @@ Hybrid Fusion
 Reranking
 ```
 
-Dense retrieval therefore acts as the baseline against which future retrieval strategies can be measured.
+Dense retrieval can therefore be measured against hybrid and reranked alternatives rather than being replaced without comparison.
 
 ---
 
-### Generation
+## Generation
 
 The generation layer provides language-model inference independently of retrieval.
 
@@ -235,19 +258,23 @@ LLMProvider
       ↓
 OllamaProvider
       ↓
+Ollama Runtime
+      ↓
 Local Qwen Model
       ↓
 GenerationResult
 ```
 
-The current implementation uses Ollama as the local model runtime and Qwen3.5 as the development baseline.
+The current implementation uses Ollama as the local runtime and Qwen3.5 as the development baseline.
 
 The generation boundary is responsible for:
 
 * model invocation
-* message transport
+* structured chat messages
 * inference configuration
 * response validation
+* output-token limits
+* model context configuration
 * token accounting
 * model-loading metrics
 * prompt-processing metrics
@@ -256,35 +283,44 @@ The generation boundary is responsible for:
 
 The generation layer is deliberately not responsible for:
 
-* retrieval
+* document retrieval
 * evidence selection
 * context construction
-* grounding
-* citations
+* grounding logic
+* citation validation
 
-Those belong to higher RAG layers.
+Those responsibilities belong to higher RAG layers.
 
 ---
 
-### Context Construction
+## Context Construction
 
-Context construction is the next major integration boundary.
+Context construction is implemented as an explicit boundary between retrieval and generation.
 
-Retrieved chunks should not simply be concatenated without control.
+```text
+RetrievalResult[]
+      ↓
+ContextBuilder
+      ↓
+EvidenceBlock[]
+      ↓
+ChatMessage[]
+```
 
-The context layer will manage:
+The context layer currently manages:
 
-* model context budget
-* evidence selection
-* retrieval ordering
-* source labelling
-* duplicate evidence
-* overlapping chunks
-* relevance constraints
+* finite model-context budgets
 * reserved generation space
+* a token-estimation safety margin
+* retrieval-order preservation
+* duplicate chunk removal
+* highly overlapping evidence filtering
+* whole-chunk inclusion
+* source labels
+* explicit evidence delimiters
 * grounding instructions
 
-Conceptually:
+The available runtime context is treated as a finite budget:
 
 ```text
 Total Runtime Context
@@ -292,40 +328,276 @@ Total Runtime Context
 ├── system instructions
 ├── user question
 ├── retrieved evidence
-└── reserved answer budget
+├── source metadata
+├── chat-template control tokens
+├── safety margin
+└── reserved generation space
 ```
 
-This layer will connect retrieval and generation in Phase 7.
+Retrieved chunks are not concatenated without limits.
+
+Each candidate evidence block is added only if the resulting prompt remains within the available budget.
+
+The baseline prefers preserving complete chunks rather than arbitrarily cutting evidence midway.
 
 ---
 
-### Citations
+## Chat-Template Token Estimation
 
-Every final citation should correspond to real retrieved evidence.
+Prompt budgeting must account for more than visible text.
+
+Chat models also receive formatting and control tokens associated with:
+
+```text
+system
+user
+assistant
+message boundaries
+generation prompt
+```
+
+The current implementation therefore estimates prompt length by:
+
+```text
+ChatMessage[]
+      ↓
+apply model chat template
+      ↓
+formatted conversation
+      ↓
+model tokenizer
+      ↓
+estimated prompt tokens
+```
+
+The token counter renders the chat template first and then tokenises the rendered text.
+
+Conceptually:
+
+```text
+apply_chat_template(
+    tokenize=False,
+    add_generation_prompt=True
+)
+       ↓
+tokenizer.encode(
+    add_special_tokens=False,
+    truncation=False
+)
+```
+
+`truncation=False` is intentional because the application needs to detect an oversized prompt rather than silently truncate it.
+
+The RAG response also preserves Ollama's actual runtime prompt-token count.
+
+This gives two observable values:
+
+```text
+estimated_prompt_tokens
+actual_prompt_tokens
+```
+
+which can later be compared experimentally.
+
+A configurable safety margin protects against small differences between the Hugging Face token estimator and the Ollama runtime.
+
+---
+
+## RAG Orchestration
+
+The RAG service coordinates retrieval, context construction, and generation.
+
+```text
+Question
+   ↓
+Retriever
+   ↓
+RetrievalResult[]
+   ↓
+ContextBuilder
+   ↓
+ChatMessage[]
+   ↓
+LLMProvider
+   ↓
+GenerationResult
+   ↓
+RAGResponse
+```
+
+The orchestration layer does not directly depend on Qdrant or Ollama.
+
+Instead it depends on interfaces:
+
+```text
+Retriever
+LLMProvider
+ChatTokenCounter
+```
+
+This keeps orchestration independent from infrastructure choices.
+
+---
+
+## Evidence Representation
+
+Evidence selected for generation is represented explicitly.
+
+Conceptually:
+
+```text
+EvidenceBlock
+├── source_id
+├── retrieval_rank
+├── similarity_score
+└── DocumentChunk
+```
+
+Source IDs currently follow a local prompt representation such as:
+
+```text
+S1
+S2
+S3
+```
+
+Evidence is rendered with explicit boundaries:
+
+```text
+<SOURCE id="S1" file="paper.pdf" page="3">
+Retrieved document text...
+</SOURCE>
+```
+
+These identifiers are not yet final citations.
+
+They provide the provenance bridge that Phase 8 will convert into validated user-facing citations.
+
+---
+
+## Evidence Deduplication
+
+Overlapping token windows can result in retrieval candidates containing repeated information.
+
+The context builder therefore removes:
+
+* identical chunk IDs
+* highly overlapping chunks from the same document page
+
+The overlap threshold is deliberately conservative.
+
+Normal neighbouring chunks produced by the configured overlap should generally remain eligible.
+
+The objective is to remove strongly redundant evidence without discarding useful neighbouring context.
+
+---
+
+## Retrieved Documents as Untrusted Data
+
+Retrieved document text is treated as evidence, not application instructions.
+
+A source document may contain text that resembles model instructions.
+
+For example:
+
+```text
+Ignore all previous instructions...
+```
+
+Such content must remain inside the evidence boundary.
+
+The grounding prompt explicitly instructs the model to treat retrieved text as source material rather than instructions.
+
+This reduces one prompt-injection path but should not be described as complete adversarial-RAG protection.
+
+---
+
+## Insufficient Evidence
+
+The RAG service explicitly handles the case where retrieval returns no usable evidence.
+
+```text
+No Evidence
+     ↓
+Skip LLM Generation
+     ↓
+Insufficient-Evidence Response
+```
+
+This avoids asking the model to answer entirely from prior knowledge when the retrieval layer has produced nothing.
+
+However, dense retrieval can still return mathematically nearest results for an unrelated question.
+
+Therefore:
+
+```text
+retrieval returned chunks
+```
+
+does not necessarily mean:
+
+```text
+the corpus contains sufficient evidence
+```
+
+Reliable weak-evidence detection will require calibrated retrieval evaluation.
+
+The project therefore does not currently impose an arbitrary global similarity threshold.
+
+---
+
+## Grounding
+
+The generation prompt instructs the model to:
+
+* answer from the supplied evidence
+* avoid unsupported outside knowledge
+* state when the evidence is insufficient
+* avoid inventing references or page numbers
+* separate evidence from cautious interpretation
+* ignore instructions contained inside retrieved evidence
+
+These are grounding mechanisms.
+
+They do not guarantee that every generated statement is faithful.
+
+Formal faithfulness and citation evaluation remain later phases.
+
+---
+
+## Citations
+
+Formal citations are the next architecture layer.
+
+Every final citation should correspond to evidence that actually entered the model context.
 
 The intended provenance chain is:
 
 ```text
-Answer claim
- ↓
-Retrieved evidence
- ↓
+Generated Claim
+      ↓
+Source Reference
+      ↓
+EvidenceBlock
+      ↓
 DocumentChunk
- ↓
+      ↓
 page_number
- ↓
+      ↓
 source document
 ```
 
-Because provenance is preserved through ingestion, chunking, storage, and retrieval, later citation construction should not need to infer or invent source information.
+Because document identity and page provenance survive ingestion, chunking, persistence, retrieval, and context construction, citation generation should not need to infer source identity after generation.
+
+Phase 8 will make this provenance user-facing and validate model-produced source identifiers.
 
 ---
 
-### Evaluation
+## Evaluation
 
 Evaluation remains independent from generation.
 
-The project will evaluate retrieval separately from answer generation so failures can be diagnosed accurately.
+The project will measure retrieval separately from answer generation so failures can be diagnosed rather than grouped together as a generic RAG failure.
 
 For example:
 
@@ -333,10 +605,14 @@ For example:
 bad retrieved evidence
         ↓
 retrieval failure
+```
 
-good evidence
+versus:
+
+```text
+good retrieved evidence
 +
-unsupported answer
+unsupported generated statement
         ↓
 generation / grounding failure
 ```
@@ -355,11 +631,21 @@ Planned answer-level evaluation includes:
 * context relevance
 * citation correctness
 
+Context-construction measurements can additionally include:
+
+* retrieved evidence count
+* evidence actually used
+* redundant chunks removed
+* chunks skipped for budget
+* estimated prompt tokens
+* actual prompt tokens
+* context truncation state
+
 ---
 
 # Current Architecture
 
-As of Phase 6, the system contains three major working pipelines.
+As of Phase 7, the project implements a complete local dense-RAG baseline.
 
 ## Indexing Pipeline
 
@@ -391,7 +677,7 @@ ChunkEmbedding[]
     Qdrant
 ```
 
-This pipeline transforms research documents into persistent searchable semantic representations.
+This transforms research PDFs into persistent searchable semantic representations.
 
 ---
 
@@ -407,16 +693,16 @@ Natural-Language Query
      Query Vector
           │
           ▼
-     VectorStore
+      VectorStore
           │
           ▼
-      Qdrant Search
+     Qdrant Search
           │
           ▼
   RetrievalResult[]
 ```
 
-The retrieval pipeline can already function independently as a semantic research search engine.
+This pipeline can operate independently as a local semantic research search system.
 
 ---
 
@@ -441,45 +727,52 @@ ChatMessage[]
 GenerationResult
 ```
 
-The generation pipeline can independently produce local model responses and exposes token and latency information for later observability.
+This pipeline can operate independently from retrieval and exposes generation metrics for later observability.
 
 ---
 
-## Phase 7 Integration
-
-The next system layer connects retrieval and generation.
+## End-to-End RAG Pipeline
 
 ```text
-                     Question
-                        │
-              ┌─────────┴─────────┐
-              ▼                   │
-      Semantic Retrieval          │
-              │                   │
-              ▼                   │
-      Retrieved Evidence          │
-              │                   │
-              └─────────┬─────────┘
-                        ▼
-                 Context Builder
-                        │
-                        ▼
-                 Grounded Prompt
-                        │
-                        ▼
-                   LLMProvider
-                        │
-                        ▼
-                    RAG Answer
+                         Question
+                            │
+                            ▼
+                        Retriever
+                            │
+                            ▼
+                   RetrievalResult[]
+                            │
+                            ▼
+                     ContextBuilder
+                            │
+             ┌──────────────┼──────────────┐
+             │              │              │
+             ▼              ▼              ▼
+        Token Budget   Deduplication   Source Labels
+             │              │              │
+             └──────────────┼──────────────┘
+                            ▼
+                      ChatMessage[]
+                            │
+                            ▼
+                       LLMProvider
+                            │
+                            ▼
+                    GenerationResult
+                            │
+                            ▼
+                       RAGResponse
 ```
 
-This is the point where the project becomes a complete Retrieval-Augmented Generation system.
+The system now supports the complete path from a natural-language question to a locally generated response supplied with retrieved evidence.
+
+Formal citation validation remains the next development layer.
 
 ---
 
 # Provider Abstractions
 
-The project uses explicit interfaces around external infrastructure.
+The project uses explicit interfaces around external infrastructure and model boundaries.
 
 ## Embeddings
 
@@ -489,7 +782,7 @@ EmbeddingProvider
        └── SentenceTransformerEmbedder
 ```
 
-Potential future providers include:
+Potential future implementations include:
 
 ```text
 EmbeddingProvider
@@ -512,6 +805,25 @@ This keeps retrieval independent from Qdrant-specific APIs.
 
 ---
 
+## Retrieval
+
+```text
+Retriever
+    │
+    └── SemanticRetriever
+```
+
+Potential future implementations include:
+
+```text
+Retriever
+├── SemanticRetriever
+├── HybridRetriever
+└── RerankingRetriever
+```
+
+---
+
 ## Generation
 
 ```text
@@ -530,13 +842,25 @@ LLMProvider
 └── other local runtimes
 ```
 
-The future RAG orchestration layer should depend only on these interfaces rather than specific vendors.
+The RAG orchestration layer should depend on these interfaces rather than specific infrastructure vendors.
+
+---
+
+## Token Counting
+
+```text
+ChatTokenCounter
+       │
+       └── HuggingFaceChatTokenCounter
+```
+
+The RAG layer therefore depends on a token-counting abstraction rather than directly coupling context construction to a specific tokenizer implementation.
 
 ---
 
 # Provenance Across the Pipeline
 
-One of the central design goals is to preserve source identity through every transformation.
+One of the central design goals is preserving source identity through every transformation.
 
 ```text
 Research PDF
@@ -553,18 +877,22 @@ Qdrant Point
      ↓
 RetrievalResult
      ↓
-Future RAG Evidence
+EvidenceBlock
      ↓
-Citation
+RAGResponse
+     ↓
+Future Citation
 ```
 
-At no stage should the system lose the relationship between retrieved information and the original document.
+At no stage should the system lose the relationship between retrieved information and the original source document.
+
+This provenance chain is what enables citation validation in the next phase.
 
 ---
 
 # Local-First Design
 
-The default architecture is intended to support an entirely local workflow:
+The default architecture supports an entirely local workflow:
 
 ```text
 Research Document
@@ -579,9 +907,11 @@ Local Vector Store
        ↓
 Local Retrieval
        ↓
+Local Context Construction
+       ↓
 Local LLM
        ↓
-Answer
+RAG Response
 ```
 
 This can be valuable when working with:
@@ -592,7 +922,7 @@ This can be valuable when working with:
 * confidential technical information
 * private knowledge bases
 
-The local-first design also keeps the infrastructure independently reproducible rather than requiring hosted model providers.
+The local-first design also keeps the baseline independently reproducible without requiring hosted model providers.
 
 ---
 
@@ -620,24 +950,30 @@ Retrieval tests
 
 Generation tests
     → HTTPX mock transport
+
+Context-builder tests
+    → fake token counter
+
+RAG service tests
+    → fake retriever + fake LLM
 ```
 
-Real models and persistent infrastructure are then tested separately through smoke tests.
+Real models and persistent infrastructure are tested separately through smoke tests.
 
 This keeps the normal test suite:
 
 * fast
 * deterministic
-* offline-friendly
 * isolated
+* mostly offline-friendly
 
-while still validating real integration behaviour separately.
+while still validating integration behaviour separately.
 
 ---
 
 # Framework Philosophy
 
-The early project intentionally avoids beginning with LangChain, LlamaIndex, or another high-level RAG orchestration framework.
+The project intentionally avoids beginning with LangChain, LlamaIndex, or another high-level RAG orchestration framework.
 
 The aim is to understand directly:
 
@@ -646,13 +982,16 @@ The aim is to understand directly:
 * how chunks are created
 * which tokenizer determines chunk size
 * how embeddings are produced
-* what metadata is stored
+* what metadata is persisted
 * how vector search behaves
 * what similarity scores represent
 * how source provenance survives retrieval
-* how the LLM is invoked
-* how context limits affect generation
-* where hallucinations can originate
+* how evidence is selected for context
+* how token budgets constrain RAG
+* what the LLM actually receives
+* how runtime token usage differs from estimates
+* where unsupported answers can originate
+* how citations can be validated against real evidence
 
 Higher-level frameworks may be explored later once these mechanics are understood and measurable.
 

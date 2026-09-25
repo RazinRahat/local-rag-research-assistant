@@ -2,11 +2,11 @@
 
 A local-first research assistant for querying and analysing research documents using Retrieval-Augmented Generation (RAG).
 
-The project is being built component by component to explore the engineering behind document processing, semantic retrieval, local language generation, grounded answers, citations, and RAG evaluation without hiding the core pipeline behind a high-level RAG framework.
+The project is being built component by component to explore the engineering behind document processing, semantic retrieval, local language generation, context construction, grounded answers, citations, and RAG evaluation without hiding the core pipeline behind a high-level RAG framework.
 
 ## Current Status
 
-**Phase 6 complete — local LLM integration.**
+**Phase 7 complete — end-to-end local RAG.**
 
 ```text
 PDF
@@ -23,14 +23,18 @@ Persistent Vector Store
  ↓
 Semantic Retrieval
  ↓
+Context Construction
+ ↓
 Local LLM
  ↓
-End-to-End RAG          ← next
+Grounded RAG Response
  ↓
-Grounded Answer + Citations
+Citations                 ← next
 ```
 
-The retrieval and generation systems currently work independently. Phase 7 will connect retrieved evidence to the local LLM through an explicit context-construction and grounding layer.
+The system can now ingest and index research documents, retrieve semantically relevant evidence, construct a bounded evidence context, and generate a local answer through Ollama.
+
+Formal citation validation and user-facing source references are the next stage.
 
 ## Current Features
 
@@ -54,95 +58,85 @@ The retrieval and generation systems currently work independently. Phase 7 will 
 * Dense semantic retrieval
 * Configurable top-k search
 * Document-scoped retrieval
+* Optional retrieval score thresholds
 * Typed ranked retrieval results
 * Local LLM inference through Ollama
 * Provider-independent LLM interface
 * Configurable generation parameters
-* Explicit local context-window configuration
 * Generation token accounting
 * Model load and inference timing metrics
-* Mocked HTTP tests for local model integration
+* Bounded RAG context construction
+* Chat-template-aware prompt token estimation
+* Whole-chunk evidence selection
+* Retrieval-order preservation
+* Duplicate and highly overlapping evidence filtering
+* Explicit source labels inside prompts
+* Retrieved-evidence prompt boundaries
+* Grounding instructions
+* Insufficient-evidence fallback when retrieval returns no usable evidence
+* Typed end-to-end RAG responses
+* Estimated vs runtime prompt-token tracking
 * Strict type checking and automated tests
 
 ## Architecture
 
-The project currently contains two independently testable pipelines.
-
-### Retrieval
+The project now implements a complete local dense-RAG baseline:
 
 ```text
-Research PDF
-     │
-     ▼
-ParsedDocument
-     │
-     ▼
-DocumentPage[]
-     │
-     ▼
-DocumentChunk[]
-     │
-     ▼
-Embedding Model
-     │
-     ▼
-ChunkEmbedding[]
-     │
-     ▼
-   Qdrant
-     │
-     ▼
-Query Embedding
-     │
-     ▼
-Semantic Search
-     │
-     ▼
-RetrievalResult[]
-```
-
-### Generation
-
-```text
-ChatMessage[]
-     │
-     ▼
- LLMProvider
-     │
-     ▼
-Ollama Runtime
-     │
-     ▼
-Local Qwen Model
-     │
-     ▼
-GenerationResult
-```
-
-Phase 7 will connect the two:
-
-```text
-Question
-   │
-   ├──────────────► Semantic Retrieval
-   │                       │
-   │                       ▼
-   │                 Retrieved Evidence
-   │                       │
-   └──────────────┬────────┘
-                  ▼
+                         Research PDF
+                              │
+                              ▼
+                         Ingestion
+                              │
+                              ▼
+                          Chunking
+                              │
+                              ▼
+                         Embeddings
+                              │
+                              ▼
+                           Qdrant
+                              │
+                              │
+User Question ────────────────┤
+        │                     │
+        ▼                     ▼
+ Query Embedding       Stored Vectors
+        │                     │
+        └──────────┬──────────┘
+                   ▼
+           Semantic Retrieval
+                   │
+                   ▼
+            Ranked Evidence
+                   │
+                   ▼
             Context Builder
-                  │
-                  ▼
-              Local LLM
-                  │
-                  ▼
-           Grounded Answer
+                   │
+        ┌──────────┼───────────┐
+        │          │           │
+    token      evidence     source
+    budget     filtering    labels
+        │          │           │
+        └──────────┼───────────┘
+                   ▼
+            Grounded Prompt
+                   │
+                   ▼
+              LLMProvider
+                   │
+                   ▼
+             Ollama / Qwen
+                   │
+                   ▼
+              RAGResponse
 ```
 
-Each retrieved chunk retains its source document, page number, chunk identity, text, similarity score, and rank so later generated answers can remain traceable to their evidence.
+Every retrieved evidence block retains its original document, page, chunk identity, retrieval score, and rank.
 
-See [System Architecture](docs/architecture.md) for the deeper design.
+The RAG response also exposes the evidence supplied to the model rather than returning only generated text.
+
+See [System Architecture](docs/architecture.md) and [End-to-End RAG Pipeline](docs/rag-pipeline.md) for the deeper design.
 
 ## Tech Stack
 
@@ -163,7 +157,7 @@ See [System Architecture](docs/architecture.md) for the deeper design.
 * Ruff
 * Mypy
 
-Additional RAG orchestration, citation, evaluation, and research-specific capabilities will be introduced incrementally.
+Additional citation, retrieval, evaluation, and research-specific capabilities will be introduced incrementally.
 
 ## Project Structure
 
@@ -176,7 +170,8 @@ src/research_assistant/
 ├── embeddings/
 ├── vector_store/
 ├── retrieval/
-└── generation/
+├── generation/
+└── rag/
 
 tests/
 ├── ingestion/
@@ -184,7 +179,8 @@ tests/
 ├── embeddings/
 ├── vector_store/
 ├── retrieval/
-└── generation/
+├── generation/
+└── rag/
 
 docs/
 ├── architecture.md
@@ -194,6 +190,7 @@ docs/
 ├── vector-store.md
 ├── retrieval.md
 ├── generation.md
+├── rag-pipeline.md
 ├── experiments.md
 └── roadmap.md
 ```
@@ -225,21 +222,21 @@ All checks should pass before changes are committed.
 
 ## Local Model Runtime
 
-The current local generation baseline uses Ollama.
+The current generation baseline uses Ollama with a local Qwen model.
 
-Ensure Ollama is installed and running, then pull the configured model:
+Pull the configured model:
 
 ```bash
 ollama pull qwen3.5:9b
 ```
 
-Check locally available models:
+Inspect locally available models:
 
 ```bash
 ollama list
 ```
 
-The application currently communicates with Ollama through its local HTTP API.
+The application communicates with Ollama through its local HTTP API.
 
 Model files are managed outside the repository and are not committed to Git.
 
@@ -259,7 +256,7 @@ data/vector_store/
 
 Document contents, generated vector stores, environment files, and local model artifacts are excluded from version control.
 
-The vector store contains document-derived text and metadata and should therefore be treated as potentially private data rather than merely as a disposable cache.
+The vector store contains document-derived text and metadata and should therefore be treated as potentially private data rather than merely as disposable cache.
 
 ## Documentation
 
@@ -272,6 +269,7 @@ Deeper implementation details are available in:
 * [Vector Storage](docs/vector-store.md)
 * [Semantic Retrieval](docs/retrieval.md)
 * [Local Generation](docs/generation.md)
+* [End-to-End RAG Pipeline](docs/rag-pipeline.md)
 * [Experiments](docs/experiments.md)
 * [Development Roadmap](docs/roadmap.md)
 
@@ -286,31 +284,34 @@ Deeper implementation details are available in:
 * Persistent vector storage
 * Semantic retrieval
 * Local LLM integration
+* End-to-end RAG orchestration
 
 **Next**
 
-* End-to-end RAG pipeline
-* Context construction
-* Grounding behaviour
-* Source citations
+* Grounded citations
+* Inspectable supporting evidence
+* Citation validation
 
 **Later**
 
-* Hybrid retrieval and reranking
+* RAG API and user interface
+* Hybrid retrieval
+* Reranking
 * RAG evaluation and benchmarking
 * Research-specific synthesis
-* API and user interface
 * Observability
 * Containerisation
 * Reproducible demo and deployment
 
 ## Design Principles
 
-* **Local first:** keep research documents and model inference on the user's machine where practical.
-* **Preserve provenance:** retrieved evidence should remain traceable to its original document and page.
+* **Local first:** keep research documents, vector storage, retrieval, and model inference on the user's machine where practical.
+* **Preserve provenance:** evidence should remain traceable from the generated answer back to the original document and page.
 * **Understand before abstracting:** implement and inspect the core pipeline before introducing high-level RAG frameworks.
-* **Separate responsibilities:** parsing, chunking, embeddings, persistence, retrieval, and generation remain independently testable.
-* **Measure instead of guess:** retrieval, generation, and later RAG decisions should increasingly be driven by controlled experiments.
+* **Separate responsibilities:** parsing, chunking, embeddings, persistence, retrieval, context construction, and generation remain independently testable.
+* **Bound the context:** retrieved evidence should fit an explicit model-context budget rather than being concatenated without limits.
+* **Treat retrieved text as data:** document contents are evidence, not executable model instructions.
+* **Measure instead of guess:** retrieval, context, generation, and later citation decisions should increasingly be driven by controlled experiments.
 
 ---
 
