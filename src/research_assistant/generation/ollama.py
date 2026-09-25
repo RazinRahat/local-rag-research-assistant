@@ -60,6 +60,14 @@ class OllamaProvider:
     def model_name(self) -> str:
         return self._config.model_name
 
+    @property
+    def context_size(self) -> int:
+        return self._config.context_size
+
+    @property
+    def max_output_tokens(self) -> int:
+        return self._config.max_output_tokens
+
     def chat(
         self,
         messages: Sequence[ChatMessage],
