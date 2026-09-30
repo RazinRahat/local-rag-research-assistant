@@ -6,15 +6,15 @@ The objective is to replace intuition-driven configuration with reproducible mea
 
 Results should be recorded with enough information to reproduce the experiment, including:
 
-* dataset or document corpus
-* query set
-* relevant configuration
-* model versions
-* retrieval settings
-* generation settings
-* metrics
-* observations
-* known limitations
+- dataset or document corpus
+- query set
+- relevant configuration
+- model versions
+- retrieval settings
+- generation settings
+- metrics
+- observations
+- known limitations
 
 Smoke tests and qualitative observations should be clearly distinguished from formal evaluation.
 
@@ -24,14 +24,15 @@ Smoke tests and qualitative observations should be clearly distinguished from fo
 
 The project currently has working implementation baselines for:
 
-* document ingestion
-* token-aware chunking
-* local embedding generation
-* persistent vector storage
-* dense semantic retrieval
-* local language generation
-* bounded context construction
-* end-to-end local RAG orchestration
+- document ingestion
+- token-aware chunking
+- local embedding generation
+- persistent vector storage
+- dense semantic retrieval
+- local language generation
+- bounded context construction
+- end-to-end local RAG orchestration
+- citation parsing and trusted evidence mapping
 
 The current end-to-end baseline is approximately:
 
@@ -58,6 +59,10 @@ bounded context construction
 Qwen3.5 through Ollama
       ↓
 RAG response
+      ↓
+strict [S#] citation parsing and evidence validation
+      ↓
+CitedRAGResponse
 ```
 
 These settings are working baselines.
@@ -66,11 +71,11 @@ They should not be interpreted as experimentally established optima.
 
 ---
 
-# Experiment Recording Template
+## Experiment Recording Template
 
 Future experiments should use a consistent structure.
 
-## Experiment
+### Experiment
 
 **Question**
 
@@ -115,7 +120,7 @@ Record the next comparison or unresolved question.
 
 ---
 
-# Phase 1–4 Baseline Observations
+## Phase 1–4 Baseline Observations
 
 The first four phases established the indexing pipeline:
 
@@ -135,19 +140,19 @@ The main engineering objective during these phases was correctness and provenanc
 
 Important baseline properties include:
 
-* page-level provenance is preserved
-* chunks remain page-local
-* chunk identifiers are deterministic
-* the embedding tokenizer is model-aware
-* embeddings remain attached to source chunks
-* Qdrant payloads preserve original chunk text and metadata
-* document replacement prevents repeated indexing from blindly accumulating stale chunks
+- page-level provenance is preserved
+- chunks remain page-local
+- chunk identifiers are deterministic
+- the embedding tokenizer is model-aware
+- embeddings remain attached to source chunks
+- Qdrant payloads preserve original chunk text and metadata
+- document replacement prevents repeated indexing from blindly accumulating stale chunks
 
 Formal comparison of alternative parsing, chunking, and embedding approaches remains future work.
 
 ---
 
-# Phase 5 — Dense Retrieval Baseline
+## Phase 5 — Dense Retrieval Baseline
 
 Phase 5 established dense semantic retrieval.
 
@@ -167,19 +172,19 @@ Initial validation focuses on whether semantically relevant passages are returne
 
 Useful qualitative query categories include:
 
-* direct questions using terminology from the source
-* paraphrased questions
-* conceptually related questions with limited lexical overlap
-* unrelated or out-of-domain questions
+- direct questions using terminology from the source
+- paraphrased questions
+- conceptually related questions with limited lexical overlap
+- unrelated or out-of-domain questions
 
 The dense baseline should eventually be evaluated against labelled query-to-evidence relationships.
 
 Planned retrieval metrics include:
 
-* Recall@K
-* Precision@K
-* Mean Reciprocal Rank
-* nDCG
+- Recall@K
+- Precision@K
+- Mean Reciprocal Rank
+- nDCG
 
 No universal similarity threshold has been selected.
 
@@ -187,7 +192,7 @@ A score threshold should only become a default after testing its precision-recal
 
 ---
 
-# Phase 6 — Local Generation Baseline
+## Phase 6 — Local Generation Baseline
 
 Phase 6 established local generation independently from retrieval.
 
@@ -203,28 +208,28 @@ with a conservative research-assistant configuration.
 
 Relevant generation measurements include:
 
-* prompt tokens
-* completion tokens
-* model load duration
-* prompt-evaluation duration
-* generation duration
-* total duration
-* approximate generated tokens per second
+- prompt tokens
+- completion tokens
+- model load duration
+- prompt-evaluation duration
+- generation duration
+- total duration
+- approximate generated tokens per second
 
 First-request latency and subsequent-request latency should be recorded separately because model loading can materially affect the first request.
 
 Generation settings such as:
 
-* temperature
-* top-p
-* context size
-* output-token allowance
+- temperature
+- top-p
+- context size
+- output-token allowance
 
 should eventually be compared under controlled conditions rather than changed based only on subjective preference.
 
 ---
 
-# Phase 7 — RAG Integration Baseline
+## Phase 7 — RAG Integration Baseline
 
 Phase 7 connects retrieval and generation.
 
@@ -267,7 +272,7 @@ This allows failures to be inspected at more than one point in the pipeline.
 
 ---
 
-## Context Budget Baseline
+### Context Budget Baseline
 
 The current local generation configuration uses an explicit runtime context budget.
 
@@ -285,12 +290,12 @@ Prompt Budget
 
 The prompt budget includes:
 
-* system instructions
-* user question
-* source metadata
-* retrieved evidence
-* evidence delimiters
-* chat-template formatting
+- system instructions
+- user question
+- source metadata
+- retrieved evidence
+- evidence delimiters
+- chat-template formatting
 
 Retrieved chunks are considered in retrieval order and included only when the resulting prompt remains within the available budget.
 
@@ -298,16 +303,16 @@ The baseline keeps whole chunks rather than truncating them arbitrarily.
 
 Future comparisons may investigate:
 
-* smaller and larger context windows
-* alternative output reservations
-* alternative safety margins
-* sentence-aware trimming
-* context compression
-* neighbouring-context expansion
+- smaller and larger context windows
+- alternative output reservations
+- alternative safety margins
+- sentence-aware trimming
+- context compression
+- neighbouring-context expansion
 
 ---
 
-## Chat Token Estimation
+### Chat Token Estimation
 
 The RAG context builder estimates prompt length before invoking the local model.
 
@@ -325,7 +330,7 @@ Qwen tokenizer
 estimated_prompt_tokens
 ```
 
-During implementation, an initial assumption that `apply_chat_template(tokenize=True)` would always return a plain `list[int]` proved too strict for the installed Transformers/tokenizer behaviour.
+During implementation, an initial assumption that \`apply_chat_template(tokenize=True)\` would always return a plain \`list[int]\` proved too strict for the installed Transformers/tokenizer behaviour.
 
 The implementation was changed to:
 
@@ -350,7 +355,7 @@ This implementation change should be treated as an engineering boundary correcti
 
 ---
 
-## Estimated vs Actual Prompt Tokens
+### Estimated vs Actual Prompt Tokens
 
 The RAG response preserves:
 
@@ -377,40 +382,40 @@ Future experiments should record this across multiple query and context sizes.
 
 Relevant questions include:
 
-* Is the error consistently small?
-* Is the estimator systematically high or low?
-* Does error increase with context length?
-* Is the current safety margin unnecessarily large?
-* Is the safety margin sufficient for all tested prompts?
+- Is the error consistently small?
+- Is the estimator systematically high or low?
+- Does error increase with context length?
+- Is the current safety margin unnecessarily large?
+- Is the safety margin sufficient for all tested prompts?
 
 No numerical conclusions should be recorded until measurements have been collected.
 
 ---
 
-## Evidence Selection
+### Evidence Selection
 
 The current context builder considers evidence in dense-retrieval order.
 
 Potential measurements include:
 
-* number of retrieved chunks
-* number retained
-* number removed as redundant
-* number skipped for budget
-* source-document diversity
-* page diversity
+- number of retrieved chunks
+- number retained
+- number removed as redundant
+- number skipped for budget
+- source-document diversity
+- page diversity
 
 Future experiments should investigate whether simple retrieval-order inclusion is sufficient or whether context quality improves through:
 
-* reranking
-* diversification
-* neighbouring-context expansion
-* parent-child retrieval
-* evidence compression
+- reranking
+- diversification
+- neighbouring-context expansion
+- parent-child retrieval
+- evidence compression
 
 ---
 
-## Overlap Deduplication
+### Overlap Deduplication
 
 Chunks currently use overlap during indexing.
 
@@ -432,47 +437,47 @@ Aggressive deduplication
 
 Possible measurements include:
 
-* prompt token savings
-* unique evidence coverage
-* answer faithfulness
-* answer completeness
+- prompt token savings
+- unique evidence coverage
+- answer faithfulness
+- answer completeness
 
 No threshold is currently claimed to be optimal.
 
 ---
 
-## Grounding Smoke Tests
+### Grounding Smoke Tests
 
 RAG integration should be inspected using several categories of questions.
 
-### Directly Answerable Query
+#### Directly Answerable Query
 
 A question whose answer appears clearly in the indexed corpus.
 
 Inspect:
 
-* retrieved evidence
-* context-selected evidence
-* generated answer
-* unsupported additions
+- retrieved evidence
+- context-selected evidence
+- generated answer
+- unsupported additions
 
-### Paraphrased Query
+#### Paraphrased Query
 
 A semantically equivalent question using different wording from the source.
 
 This helps inspect whether dense retrieval finds relevant evidence beyond exact lexical matching.
 
-### Out-of-Domain Query
+#### Out-of-Domain Query
 
 A question unrelated to the indexed corpus.
 
 Inspect:
 
-* similarity scores
-* whether retrieval still returns weak candidates
-* whether a configured threshold removes them
-* whether the model claims insufficient evidence
-* whether the model answers from prior knowledge despite grounding instructions
+- similarity scores
+- whether retrieval still returns weak candidates
+- whether a configured threshold removes them
+- whether the model claims insufficient evidence
+- whether the model answers from prior knowledge despite grounding instructions
 
 These tests are qualitative integration checks.
 
@@ -480,7 +485,7 @@ They are not substitutes for formal faithfulness evaluation.
 
 ---
 
-## Insufficient-Evidence Behaviour
+### Insufficient-Evidence Behaviour
 
 If retrieval returns no usable evidence, the RAG service bypasses the language model and returns an explicit insufficient-evidence response.
 
@@ -496,30 +501,79 @@ Dense nearest-neighbour search can produce mathematically closest chunks even wh
 
 Future evaluation should therefore examine:
 
-* retrieval score distributions
-* threshold selection
-* false-positive evidence
-* no-answer questions
-* model behaviour when evidence is weak
+- retrieval score distributions
+- threshold selection
+- false-positive evidence
+- no-answer questions
+- model behaviour when evidence is weak
 
 This will be important before claiming reliable hallucination reduction.
 
 ---
 
-# Planned Retrieval Experiments
+## Phase 8 — Citation Integrity Baseline
+
+Phase 8 adds citation parsing and source-identity validation as an independent operation after a completed `RAGResponse`.
+
+The model is instructed to write source references as `[S1]`, `[S2]`, …, using only the temporary IDs supplied in the selected context. The `CitationService` then extracts recognised tokens and maps them back to the exact `EvidenceBlock` values used for generation.
+
+```text
+Grounded answer with [S#] references
+             ↓
+       parse_citations()
+             ↓
+       CitationReference[]
+             ↓
+ validate against selected EvidenceBlock[]
+             ↓
+       CitationSource[]
+             ↓
+        CitedRAGResponse
+```
+
+The Phase 8 unit-test baseline covers strict reference extraction, character offsets, multiple and repeated references, irrelevant brackets, source mapping, unknown recognised IDs, missing citations in evidence-backed answers, and citation-free explicit insufficient-evidence responses. A manual local smoke test checks source metadata on an actual cited RAG answer.
+
+### Citation-Integrity Invariants
+
+- A recognised `[S#]` must resolve to evidence supplied for that individual generation request.
+- Repeated inline references are preserved; the unique cited-source list is deduplicated.
+- Stored provenance—not text generated by the LLM—supplies document ID, filename, page number, chunk ID, and evidence text.
+- Unknown recognised IDs such as `[S99]` are rejected when not in the supplied evidence.
+- Citation-free evidence-backed answers fail validation; explicit insufficient-evidence responses are exempt.
+
+**Limitations:** this parser recognises only strict syntax. Unsupported formats such as `[S1, S2]` are ignored, not comprehensively diagnosed; a response with at least one recognised citation could also contain unrecognised malformed references. Phase 8 does not yet prove that a real cited chunk supports the nearby factual assertion or that every sentence has a citation.
+
+### Future Citation Measurements
+
+A representative, labelled set should distinguish syntax/provenance integrity from semantic claim support. Candidate measures include:
+
+- proportion of generated outputs containing recognised citations
+- count/rate of recognised unknown source IDs
+- proportion of responses violating the expected citation protocol
+- references per answer and unique sources per answer
+- duplicate references and source-distribution patterns
+- claim-level citation coverage (future annotation)
+- semantic support of claims by cited passages (future annotation)
+- citation validity versus citation correctness
+
+No observed pass percentages or benchmark values are recorded here merely because the implementation and local smoke tests succeeded.
+
+---
+
+## Planned Retrieval Experiments
 
 Planned retrieval comparisons include:
 
-* chunk size
-* chunk overlap
-* chunking strategy
-* embedding model
-* retrieval top-k
-* similarity threshold
-* dense vs hybrid retrieval
-* BM25 contribution
-* Reciprocal Rank Fusion
-* reranking
+- chunk size
+- chunk overlap
+- chunking strategy
+- embedding model
+- retrieval top-k
+- similarity threshold
+- dense vs hybrid retrieval
+- BM25 contribution
+- Reciprocal Rank Fusion
+- reranking
 
 Relevant metrics include:
 
@@ -532,86 +586,79 @@ nDCG
 
 ---
 
-# Planned Context Experiments
+## Planned Context Experiments
 
 Planned context-construction comparisons include:
 
-* context size
-* reserved output allowance
-* safety margin
-* overlap-deduplication threshold
-* evidence ordering
-* evidence diversity
-* whole chunks vs trimmed chunks
-* neighbouring-context inclusion
-* context compression
+- context size
+- reserved output allowance
+- safety margin
+- overlap-deduplication threshold
+- evidence ordering
+- evidence diversity
+- whole chunks vs trimmed chunks
+- neighbouring-context inclusion
+- context compression
 
 Relevant measurements may include:
 
-* evidence coverage
-* prompt-token usage
-* context truncation rate
-* token-estimation error
-* answer faithfulness
-* answer completeness
+- evidence coverage
+- prompt-token usage
+- context truncation rate
+- token-estimation error
+- answer faithfulness
+- answer completeness
 
 ---
 
-# Planned Generation Experiments
+## Planned Generation Experiments
 
 Potential comparisons include:
 
-* local model size
-* generation temperature
-* top-p
-* output-token budget
-* context-window allocation
-* reasoning/thinking configuration
-* prompt variants
+- local model size
+- generation temperature
+- top-p
+- output-token budget
+- context-window allocation
+- reasoning/thinking configuration
+- prompt variants
 
 Relevant measurements may include:
 
-* faithfulness
-* answer relevance
-* latency
-* token usage
-* memory use
+- faithfulness
+- answer relevance
+- latency
+- token usage
+- memory use
 
 Generation experiments should use the same retrieval evidence when comparing model configurations so retrieval differences do not confound the comparison.
 
 ---
 
-# Planned Citation Experiments
+## Planned Citation Evaluation
 
-Once Phase 8 is implemented, citation experiments can include:
+Phase 8 provides a working citation-integrity baseline (see above). Formal citation evaluation is still planned. It should distinguish **reference identity validity** (does `[S2]` exist in the supplied context?) from **semantic correctness** (does source S2 actually support the assertion it accompanies?).
 
-* citation parsing accuracy
-* valid source-reference rate
-* unknown citation rejection
-* citation-to-evidence correctness
-* page-reference correctness
-* citation coverage of answer claims
+Further experiments can assess malformed-protocol detection, unknown-ID rejection, source-to-page correctness, missing-citation rates, claim-level coverage, and annotation of unsupported citations. Citation behaviour should be compared under a fixed retrieval set when experimenting with generation instructions, so changes can be attributed more clearly.
 
-The citation layer should be evaluated separately from retrieval and generation wherever possible.
-
+The citation layer should be evaluated independently from retrieval and generation wherever practical.
 ---
 
-# Planned End-to-End Evaluation
+## Planned End-to-End Evaluation
 
 Later evaluation should distinguish at least four failure classes:
 
 ```text
 Retrieval Failure
     → relevant evidence not retrieved
-
 Context Failure
     → relevant evidence retrieved but not supplied to model
-
 Generation Failure
     → correct evidence supplied but answer unsupported or incorrect
-
-Citation Failure
-    → answer evidence exists but citation mapping is incorrect
+Citation Identity Failure
+    → recognised source ID is missing or unmapped
+Citation Support Failure
+    → source ID resolves but evidence does not support the associated claim
 ```
 
 This decomposition is central to the project.
@@ -620,7 +667,7 @@ A single overall RAG score would make these failures harder to diagnose.
 
 ---
 
-# Benchmarking Principles
+## Benchmarking Principles
 
 The project should follow several principles during experimentation.
 
@@ -646,7 +693,7 @@ Configuration choices should be described as baselines until controlled experime
 
 ---
 
-# Planned Technical Report
+## Planned Technical Report
 
 The final project should be able to explain not only:
 
@@ -658,19 +705,19 @@ but also:
 
 The technical report should eventually compare:
 
-* ingestion behaviour
-* chunking strategies
-* embedding models
-* retrieval methods
-* score thresholds
-* hybrid retrieval
-* reranking
-* context construction
-* token budgeting
-* local model performance
-* answer faithfulness
-* citation correctness
-* latency
-* memory usage
+- ingestion behaviour
+- chunking strategies
+- embedding models
+- retrieval methods
+- score thresholds
+- hybrid retrieval
+- reranking
+- context construction
+- token budgeting
+- local model performance
+- answer faithfulness
+- citation correctness
+- latency
+- memory usage
 
 The final system should therefore be supported by measured engineering decisions rather than only a working demonstration.
