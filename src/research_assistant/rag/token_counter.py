@@ -31,9 +31,7 @@ class HuggingFaceChatTokenCounter:
     ) -> None:
         self._tokenizer = cast(
             PreTrainedTokenizerBase,
-            AutoTokenizer.from_pretrained(
-                model_name
-            ),
+            AutoTokenizer.from_pretrained(model_name),
         )
 
     def count_messages(
@@ -55,9 +53,7 @@ class HuggingFaceChatTokenCounter:
         )
 
         if not isinstance(formatted, str):
-            raise TypeError(
-                "Expected chat template to return formatted text"
-            )
+            raise TypeError("Expected chat template to return formatted text")
 
         token_ids = self._tokenizer.encode(
             formatted,
