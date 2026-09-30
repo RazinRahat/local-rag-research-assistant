@@ -107,41 +107,74 @@ CitationService: parse → validate → map
 CitedRAGResponse
 ```
 
-## Phase 9 — RAG API 🚧
+## Phase 9 — RAG API ✅
+
+- Typed FastAPI request and response models
+- Shared retrieval options with validation and conversion to `RetrievalConfig`
+- Explicit application errors and domain-to-HTTP error translation
+- `ResearchAPI` application boundary and `ResearchService` orchestration
+- `LocalPDFIndexer` connecting PDF ingestion, chunking, embeddings, and vector persistence
+- Configurable upload-size protection and invalid/non-indexable PDF handling
+- `StoredDocument` representation for indexed-document summaries
+- Qdrant document enumeration through chunk-payload aggregation
+- Document upload/indexing, listing, and deletion endpoints
+- Retrieval-only `/search` endpoint
+- Full cited-RAG `/query` endpoint returning `CitedRAGResponse`
+- Existing lightweight `/health` endpoint preserved
+- Runtime composition for tokenizer, BGE embeddings, Qdrant, retrieval, context construction, Ollama, RAG, and citation validation
+- Lazy application-service construction
+- FastAPI lifespan cleanup for shared Qdrant and Ollama resources
+- Route tests with a fake `ResearchAPI`
+- Application-service tests using lightweight fake dependencies
+- Concrete indexer tests using generated PDFs
+- Regression tests preserving earlier ingestion, retrieval, vector-store, RAG, and citation behaviour
+- Real local indexing and full HTTP smoke-testing workflows
+- Swagger/OpenAPI route inspection
+
+The implemented routes are:
+
+```text
+GET    /health
+POST   /documents
+GET    /documents
+DELETE /documents/{document_id}
+POST   /search
+POST   /query
+```
+
+**Boundary of Phase 9:** the API is a local, single-process development baseline. Authentication, multi-user isolation, background jobs, public deployment hardening, distributed workers, streaming generation, and production observability remain outside this phase.
+
+The current application path is:
+
+```text
+HTTP request
+     ↓
+FastAPI
+     ↓
+ResearchAPI / ResearchService
+     ↓
+existing ingestion / retrieval / RAG components
+     ↓
+CitedRAGResponse or retrieval/document result
+     ↓
+HTTP JSON
+```
+
+## Phase 10 — User Interface 🚧
 
 Current focus:
 
-- FastAPI request/response schemas and dependency wiring
-- Application lifecycle and resource management for Qdrant/Ollama
-- Document upload, validation, ingestion, indexing, listing, and deletion
-- Semantic search and cited-question endpoints
-- Request validation and appropriate domain-to-HTTP error mapping
-- Exposure of answer, citation references, unique sources, and relevant diagnostics
-- API tests with lightweight fake providers and isolated storage
-- Avoiding accidental disclosure of private source content in logs or exceptions
+- Lightweight local research interface
+- PDF upload and indexed-document management
+- Research-question input
+- Cited answer rendering
+- Source/evidence inspection
+- Retrieval-result inspection where useful
+- Clear insufficient-evidence presentation
+- Loading and failure states for local model operations
+- Interaction with the existing Phase 9 API rather than direct model/storage access
 
-Planned routes (subject to refinement):
-
-```text
-POST   /documents
-GET    /documents
-DELETE /documents/{id}
-POST   /search
-POST   /query
-GET    /health
-```
-
-The existing health endpoint is already implemented; the full RAG routes are part of this phase.
-
-## Phase 10 — User Interface
-
-Planned:
-
-- Lightweight research interface and document management
-- Question answering and source inspection
-- Cited answer rendering and citation interaction
-- Retrieved-evidence display
-- More polished frontend once API and citation contracts are stable
+A more polished interface can follow once the initial API-driven research workflow is usable end to end.
 
 ## Phase 11 — Hybrid Retrieval
 

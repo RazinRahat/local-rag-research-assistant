@@ -199,6 +199,8 @@ The vector-store boundary supports:
 - document filtering
 - vector similarity search
 
+The concrete Qdrant adapter also supports document enumeration for the Phase 9 application layer by aggregating stored chunk payloads into `StoredDocument` summaries. This remains separate from the core `VectorStore` retrieval protocol.
+
 The application does not expose Qdrant-specific result objects outside this layer.
 
 Stored chunk text means retrieved evidence can be reconstructed directly from the vector-store payload without re-opening the original PDF during every query.
@@ -664,7 +666,7 @@ Context-construction measurements can additionally include:
 
 ## Current Architecture
 
-As of Phase 8, the project implements a complete local dense-RAG baseline followed by independent citation-integrity validation.
+As of Phase 9, the project implements a complete local dense-RAG baseline, independent citation-integrity validation, and a typed FastAPI application boundary exposing document indexing, semantic retrieval, and cited question answering.
 
 ### Indexing Pipeline
 
@@ -793,7 +795,102 @@ This pipeline can operate independently from retrieval and exposes generation me
                       CitedRAGResponse
 ```
 
-The system supports local evidence-grounded generation and, as a separate post-generation step, validation of recognised source IDs against the evidence selected for that prompt. Phase 9 will expose these models through API contracts.
+The system supports local evidence-grounded generation and, as a separate post-generation step, validation of recognised source IDs against the evidence selected for that prompt. Phase 9 exposes these capabilities through typed FastAPI contracts without moving retrieval, generation, or citation logic into the transport layer.
+
+---
+
+## Application and HTTP Layer
+
+Phase 9 adds a typed application and HTTP boundary around the existing indexing and RAG pipelines.
+
+```text
+                           Client
+                              │
+                              ▼
+                           FastAPI
+                              │
+                ┌─────────────┼─────────────┐
+                │             │             │
+                ▼             ▼             ▼
+            Documents       Search         Query
+                │             │             │
+                └─────────────┼─────────────┘
+                              ▼
+                       ResearchService
+                              │
+             ┌────────────────┼────────────────┐
+             │                │                │
+             ▼                ▼                ▼
+      LocalPDFIndexer   SemanticRetriever   RAGService
+             │                │                │
+             ▼                ▼                ▼
+        Phases 1–4          Phase 5         Phases 6–8
+```
+
+The HTTP routes remain intentionally thin. They validate transport-level input, translate expected application failures into HTTP responses, and delegate domain work through the `ResearchAPI` boundary.
+
+`ResearchService` coordinates:
+
+- document indexing
+- document listing and deletion
+- semantic retrieval
+- RAG generation
+- citation validation
+- runtime cleanup
+
+It does not reimplement PDF parsing, chunking, embedding, retrieval, generation, or citation parsing.
+
+The document-indexing application path is:
+
+```text
+BinaryIO upload
+      ↓
+LocalPDFIndexer
+      ↓
+temporary PDF
+      ↓
+load_pdf()
+      ↓
+ParsedDocument
+      ↓
+chunk_document()
+      ↓
+DocumentChunk[]
+      ↓
+embed_chunks()
+      ↓
+ChunkEmbedding[]
+      ↓
+VectorStore.replace_document()
+      ↓
+StoredDocument
+```
+
+The Phase 1 ingestion layer remains responsible for content-derived SHA-256 document identity. The indexer preserves that identity through chunking, embeddings, and storage.
+
+Qdrant stores individual chunk points rather than a separate document table. Phase 9 therefore adds document enumeration through the concrete `QdrantVectorStore`, which scrolls chunk payloads and aggregates them into `StoredDocument` summaries. This capability is exposed through the Phase 9 `DocumentRegistry` boundary rather than expanding the Phase 5 `VectorStore` retrieval contract.
+
+Runtime composition is isolated in `api/runtime.py`. It creates and connects the concrete:
+
+```text
+HuggingFaceTokenizer
+SentenceTransformerEmbedder
+QdrantVectorStore
+SemanticRetriever
+OllamaProvider
+HuggingFaceChatTokenCounter
+ContextBuilder
+RAGService
+CitationService
+LocalPDFIndexer
+ResearchService
+```
+
+The research service is constructed lazily. `GET /health` therefore remains lightweight and does not need to initialise the complete local AI stack.
+
+FastAPI lifespan handling closes shared Ollama and Qdrant resources during application shutdown.
+
+The current HTTP application is deliberately a local, single-process baseline. Authentication, multi-user isolation, distributed workers, background indexing, and public deployment hardening remain outside Phase 9.
 
 ---
 
@@ -984,6 +1081,16 @@ Citation parser/validator tests
     → synthetic evidence and answer strings
 Citation service tests
     → synthetic RAGResponse
+API model tests
+    → Pydantic validation only
+Application-service tests
+    → fake indexer + registry + retriever + RAG service
+PDF-indexer tests
+    → generated PDFs + lightweight fake model/storage providers
+API route tests
+    → fake ResearchAPI
+Full HTTP smoke test
+    → real local Phases 1–9
 ```
 
 Real models and persistent infrastructure are tested separately through smoke tests.

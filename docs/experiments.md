@@ -33,6 +33,7 @@ The project currently has working implementation baselines for:
 - bounded context construction
 - end-to-end local RAG orchestration
 - citation parsing and trusted evidence mapping
+- typed FastAPI application and document-management boundary
 
 The current end-to-end baseline is approximately:
 
@@ -63,6 +64,8 @@ RAG response
 strict [S#] citation parsing and evidence validation
       ↓
 CitedRAGResponse
+      ↓
+FastAPI response
 ```
 
 These settings are working baselines.
@@ -557,6 +560,134 @@ A representative, labelled set should distinguish syntax/provenance integrity fr
 - citation validity versus citation correctness
 
 No observed pass percentages or benchmark values are recorded here merely because the implementation and local smoke tests succeeded.
+
+---
+
+## Phase 9 — API Integration Baseline
+
+Phase 9 exposes the working local RAG pipeline through FastAPI while preserving the existing component boundaries.
+
+The implemented API baseline is:
+
+```text
+HTTP request
+     ↓
+FastAPI
+     ↓
+ResearchService
+     ↓
+indexing / retrieval / RAG pipeline
+     ↓
+typed response
+     ↓
+HTTP JSON
+```
+
+The implemented routes are:
+
+```text
+GET    /health
+POST   /documents
+GET    /documents
+DELETE /documents/{document_id}
+POST   /search
+POST   /query
+```
+
+### API Integration Checks
+
+Phase 9 uses several levels of validation.
+
+**Request-model tests** verify:
+
+- default retrieval settings
+- whitespace handling
+- invalid top-k values
+- invalid document IDs
+- rejection of unknown fields
+- conversion to domain `RetrievalConfig`
+
+**Application-service tests** verify delegation for:
+
+- document indexing
+- document listing
+- document deletion
+- semantic retrieval
+- RAG generation
+- citation validation
+- runtime resource cleanup
+
+**Indexer tests** exercise:
+
+```text
+generated PDF
+    ↓
+real ingestion
+    ↓
+real chunking
+    ↓
+embedding boundary
+    ↓
+vector-store boundary
+```
+
+without requiring the production embedding model for every unit test.
+
+**Vector-store integration tests** verify that Qdrant document enumeration reconstructs document summaries from stored chunk payloads and that document replacement updates the derived chunk count correctly.
+
+**Route tests** verify HTTP behaviour using a fake `ResearchAPI`, keeping normal API tests independent from BGE, persistent Qdrant data, and Ollama.
+
+**Real local smoke tests** additionally exercise the actual indexing pipeline and the complete HTTP path through the local models and persistent infrastructure.
+
+### Phase 9 Invariants
+
+- `/search` performs retrieval without invoking the language model.
+- `/query` returns the existing `CitedRAGResponse` rather than bypassing citation validation.
+- FastAPI routes do not implement ingestion, retrieval, generation, or citation logic directly.
+- `GET /health` remains lightweight.
+- Shared local infrastructure is composed in one runtime boundary.
+- Qdrant and Ollama resources are closed during application shutdown.
+- Document enumeration does not require loading stored embedding vectors.
+- Phase 1–8 component tests remain valid after introducing the HTTP layer.
+
+### Current API Limitations
+
+The successful smoke tests establish integration behaviour, not production performance.
+
+No claims are currently made about:
+
+- request throughput
+- concurrent-user capacity
+- upload latency distributions
+- indexing latency distributions
+- retrieval latency distributions
+- generation latency distributions at the HTTP level
+- maximum practical corpus size
+- public-service security
+- multi-process behaviour
+- multi-user isolation
+
+The current API uses a local single-process architecture and embedded persistent Qdrant storage.
+
+These are engineering baseline choices, not experimentally established deployment optima.
+
+### Future API Measurements
+
+Once observability is introduced, useful measurements may include:
+
+- request latency by endpoint
+- PDF indexing time
+- embedding time
+- retrieval time
+- context-construction time
+- model load and generation time
+- end-to-end query latency
+- request failure category
+- indexed document/chunk counts
+- memory use
+- repeated-request warm vs cold latency
+
+These measurements should preserve the existing principle of separating retrieval, context, generation, citation, and infrastructure failures rather than collapsing them into a single end-to-end score.
 
 ---
 
