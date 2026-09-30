@@ -34,3 +34,13 @@ class VectorSearchResult(BaseModel):
     chunk: DocumentChunk
 
     embedding_model: str
+
+
+class StoredDocument(BaseModel):
+    """Summary of one document represented in the vector store."""
+
+    model_config = ConfigDict(frozen=True)
+
+    document_id: str
+    file_name: str
+    chunk_count: int = Field(ge=1)

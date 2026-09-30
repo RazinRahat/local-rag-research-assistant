@@ -1,3 +1,4 @@
+from collections import Counter
 from collections.abc import Sequence
 from typing import Any
 from uuid import NAMESPACE_URL, uuid5
@@ -15,6 +16,7 @@ from research_assistant.vector_store.exceptions import (
     EmbeddingBatchError,
 )
 from research_assistant.vector_store.models import (
+    StoredDocument,
     VectorSearchResult,
     VectorStoreConfig,
 )
@@ -365,3 +367,59 @@ class QdrantVectorStore:
             )
 
         return tuple(results)
+
+    def list_documents(
+        self,
+    ) -> tuple[StoredDocument, ...]:
+        """Return documents represented by stored chunk payloads."""
+
+        counts: Counter[str] = Counter()
+        file_names: dict[str, str] = {}
+
+        offset = None
+
+        while True:
+            records, offset = self._client.scroll(
+                collection_name=self._config.collection_name,
+                offset=offset,
+                limit=256,
+                with_payload=[
+                    "document_id",
+                    "file_name",
+                ],
+                with_vectors=False,
+            )
+
+            for record in records:
+                if record.payload is None:
+                    raise ValueError("Stored point is missing payload metadata")
+
+                document_id = _required_str(
+                    record.payload,
+                    "document_id",
+                )
+
+                file_name = _required_str(
+                    record.payload,
+                    "file_name",
+                )
+
+                previous_name = file_names.get(document_id)
+
+                if previous_name is not None and previous_name != file_name:
+                    raise ValueError("Stored document has inconsistent filenames")
+
+                file_names[document_id] = file_name
+                counts[document_id] += 1
+
+            if offset is None:
+                break
+
+        return tuple(
+            StoredDocument(
+                document_id=document_id,
+                file_name=file_names[document_id],
+                chunk_count=counts[document_id],
+            )
+            for document_id in sorted(counts)
+        )
