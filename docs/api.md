@@ -620,17 +620,38 @@ These limitations are intentional boundaries for the current phase rather than h
 
 ---
 
-## Next Phase
+## Phase 10 Frontend Integration
 
-Phase 10 introduces the user interface.
-
-The API now provides stable boundaries for:
+Phase 10 consumes this API through a React + TypeScript research workspace. The API contract itself remains the transport boundary; frontend code does not access backend storage, embedding, retrieval, or model providers directly.
 
 ```text
-document management
-semantic search
-cited question answering
-source evidence inspection
+React UI
+   ↓
+ResearchAPIClient
+   ↓
+/api/*
+   ↓
+FastAPI routes
+   ↓
+ResearchService
 ```
+
+During local development, Vite proxies `/api/*` to `http://127.0.0.1:8000` and removes the `/api` prefix before forwarding the request. This avoids coupling React components to a development origin while keeping the backend routes unchanged.
+
+The frontend uses the API for:
+
+```text
+GET    /documents                  document library
+POST   /documents                  PDF upload/indexing
+DELETE /documents/{document_id}    indexed-document removal
+POST   /search                     retrieval-only evidence search
+POST   /query                      cited RAG question answering
+```
+
+Citation inspection is intentionally client-side after `/query` completes. The returned `CitationSource` already contains the trusted `EvidenceBlock`, so selecting `[S1]` does not perform a second retrieval request.
+
+## Next API Work
+
+The current API is sufficient for the Phase 10 local research workspace. Later API evolution should be driven by concrete requirements such as hybrid retrieval, reranking, evaluation endpoints, observability, streaming generation, or deployment constraints rather than adding transport complexity pre-emptively.
 
 The frontend can therefore consume the RAG system without directly depending on Python model, storage, or inference components.

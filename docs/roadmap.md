@@ -160,21 +160,49 @@ CitedRAGResponse or retrieval/document result
 HTTP JSON
 ```
 
-## Phase 10 — User Interface 🚧
+## Phase 10 — User Interface ✅
 
-Current focus:
+Phase 10 adds a browser-based research workspace on top of the Phase 9 HTTP API without bypassing the existing application boundaries.
 
-- Lightweight local research interface
-- PDF upload and indexed-document management
-- Research-question input
-- Cited answer rendering
-- Source/evidence inspection
-- Retrieval-result inspection where useful
-- Clear insufficient-evidence presentation
-- Loading and failure states for local model operations
-- Interaction with the existing Phase 9 API rather than direct model/storage access
+Implemented:
 
-A more polished interface can follow once the initial API-driven research workflow is usable end to end.
+- React + TypeScript frontend built with Vite
+- Development proxy from `/api/*` to the local FastAPI server
+- Typed frontend models and a central `ResearchAPIClient`
+- Indexed-document loading, PDF upload, replacement, selection, and deletion
+- Corpus-wide and document-scoped semantic search
+- Ranked evidence cards with filename, page, score, chunk text, and retrieval metadata
+- Cited RAG question answering through `/query`
+- Explicit insufficient-evidence presentation
+- Validated inline citation controls for `[S1]`, `[S2]`, ...
+- Evidence inspection using the exact `EvidenceBlock` associated with the generation request
+- Trusted document/page/chunk provenance display
+- Local generation diagnostics display
+- Loading, error, empty-library, and destructive-action states
+- `Cmd/Ctrl + Enter` submission while preserving normal textarea newlines
+- Protection against stale search/RAG responses overwriting newer scope or request state
+- Frontend unit/component/integration tests
+- Manual end-to-end workflow across upload, search, RAG, citation inspection, scope changes, and deletion
+
+Phase 10 intentionally keeps the browser as an API client. It does not access Qdrant, the embedding model, the tokenizer, or Ollama directly.
+
+The implemented browser path is:
+
+```text
+React UI
+   ↓
+ResearchAPIClient
+   ↓
+/api/* through Vite development proxy
+   ↓
+FastAPI
+   ↓
+ResearchService
+   ↓
+existing Phase 1–8 components
+```
+
+The initial frontend is a local research workspace rather than a public multi-user application. Authentication, streaming responses, public deployment hardening, and broader product polish remain future work.
 
 ## Phase 11 — Hybrid Retrieval
 

@@ -691,6 +691,149 @@ These measurements should preserve the existing principle of separating retrieva
 
 ---
 
+## Phase 10 — Frontend Integration Baseline
+
+Phase 10 adds a browser research workspace over the Phase 9 API. The purpose of the Phase 10 checks is integration validation rather than retrieval-quality or model-quality benchmarking.
+
+The implemented browser baseline supports:
+
+```text
+PDF upload / document lifecycle
+        ↓
+corpus scope selection
+        ↓
+semantic search
+        ↓
+cited RAG question answering
+        ↓
+validated citation inspection
+        ↓
+trusted evidence provenance
+```
+
+### Frontend Automated Checks
+
+The frontend suite validates the following boundaries independently:
+
+**HTTP client**
+
+- health/document/search/query request construction
+- multipart document upload without manually overriding the generated boundary
+- FastAPI error-detail translation
+- 204 document deletion handling
+
+**Document state**
+
+- initial document loading
+- upload upsert by document identity
+- deletion from local state
+- error presentation
+- document selection and destructive-action confirmation
+
+**Semantic search**
+
+- document-scoped and corpus-wide request construction
+- ranked-result rendering
+- score display without interpreting similarity as probability
+- loading, empty, and failure states
+- stale-response rejection when newer state supersedes an in-flight request
+
+**Cited RAG**
+
+- document-scoped query construction
+- answer, insufficient-evidence, loading, and failure states
+- generation diagnostics rendering
+- stale-response rejection
+
+**Citation/evidence inspection**
+
+- only known validated source IDs become interactive controls
+- citation character ranges remain aligned with Unicode code-point indexing
+- inline references and source cards select the same trusted evidence
+- document/page/chunk provenance is presented from `EvidenceBlock` data
+- citation inspection does not require a new retrieval request
+
+**Application integration**
+
+- document upload appears without a page refresh
+- selected-document scope is propagated to search and RAG requests
+- deletion of the selected document returns scope to the whole corpus
+- empty libraries disable research execution
+- `Cmd/Ctrl + Enter` submits while normal Enter remains available for multiline input
+
+### Real Frontend ↔ Backend Smoke Workflow
+
+A manual local smoke workflow was completed across the real browser-facing stack. The workflow exercised:
+
+```text
+React / Vite
+    ↓
+ResearchAPIClient
+    ↓
+FastAPI
+    ↓
+ResearchService
+    ↓
+PyMuPDF / chunking / BGE / Qdrant
+    ↓
+retrieval / context construction
+    ↓
+Ollama / Qwen
+    ↓
+citation validation
+    ↓
+React answer + evidence inspection
+```
+
+The workflow covered:
+
+- initial document-library loading
+- real PDF upload and indexing
+- duplicate-upload replacement semantics
+- document-scoped semantic search
+- corpus-wide semantic search
+- keyboard submission
+- real cited RAG generation
+- inline citation selection
+- source-card selection
+- exact evidence/provenance inspection
+- an unsupported-question path
+- stale-request/scope-change behaviour
+- result/question provenance after textarea edits
+- delete confirmation, deletion, and scope reset
+
+No numerical retrieval-quality, latency, throughput, memory, or accuracy claims are inferred from this smoke workflow. Exact values should be recorded only when captured as part of a controlled experiment or benchmark.
+
+### Phase 10 Invariants
+
+- The browser communicates with the research system only through the Phase 9 HTTP API.
+- React components do not query Qdrant or Ollama directly.
+- Semantic Search does not invoke the language model.
+- Citation inspection uses evidence already returned for the generation request.
+- Similarity scores are displayed as raw retrieval scores rather than calibrated relevance probabilities.
+- Changing corpus scope invalidates displayed search/RAG state.
+- Stale asynchronous responses cannot overwrite newer scope/request state.
+- Citation identity validation remains distinct from claim-level citation support.
+
+### Current Frontend Limitations
+
+The completed frontend is a local research-workspace baseline. No claims are currently made about:
+
+- public internet deployment
+- authentication or account isolation
+- concurrent multi-user behaviour
+- streaming token rendering
+- browser-session persistence
+- accessibility certification
+- mobile-first product optimisation
+- calibrated confidence scores
+- formal answer correctness
+- formal claim-to-source entailment
+
+These are future engineering or evaluation concerns rather than missing evidence that should be filled with assumptions.
+
+---
+
 ## Planned Retrieval Experiments
 
 Planned retrieval comparisons include:

@@ -894,6 +894,143 @@ The current HTTP application is deliberately a local, single-process baseline. A
 
 ---
 
+## Browser Application Layer
+
+Phase 10 adds a React + TypeScript browser application as a client of the Phase 9 API. The browser does not import backend domain modules or access local model/storage infrastructure directly.
+
+```text
+                           Browser
+                              │
+                              ▼
+                         React / Vite
+                              │
+                              ▼
+                     ResearchAPIClient
+                              │
+                              ▼
+                     /api/* dev proxy
+                              │
+                              ▼
+                           FastAPI
+                              │
+                              ▼
+                       ResearchService
+                              │
+             ┌────────────────┼────────────────┐
+             │                │                │
+             ▼                ▼                ▼
+      LocalPDFIndexer   SemanticRetriever   RAGService
+                                               │
+                                               ▼
+                                        CitationService
+```
+
+The frontend preserves the transport boundary introduced in Phase 9. React components call a single typed API client rather than using ad hoc `fetch()` calls throughout the component tree. This concentrates HTTP paths, request serialisation, multipart upload handling, error translation, and future cross-cutting transport concerns in one place.
+
+### Frontend Responsibilities
+
+The browser application is responsible for:
+
+- presenting the indexed document library
+- uploading and deleting research PDFs through HTTP
+- selecting whole-corpus or document-specific scope
+- collecting semantic-search queries and RAG questions
+- displaying ranked retrieval results
+- displaying grounded answers and insufficient-evidence states
+- exposing validated citation identities as interactive controls
+- inspecting the exact evidence associated with a citation source
+- exposing selected provenance and generation diagnostics
+- managing loading, error, and empty states
+- preventing stale asynchronous responses from overwriting newer user state
+
+The browser is not responsible for:
+
+- PDF parsing
+- tokenisation or chunk creation
+- embedding inference
+- vector search implementation
+- context budgeting
+- model prompting
+- citation parsing or validation
+- reconstruction of document/page provenance from generated model text
+
+### Frontend State Boundaries
+
+Frontend state is intentionally divided by responsibility rather than centralised prematurely.
+
+```text
+useDocuments()
+   └─ indexed-document lifecycle
+
+useSearch()
+   └─ semantic-search execution and results
+
+useResearchQuery()
+   └─ cited-RAG execution and response
+
+App
+   └─ current mode, query text, and selected corpus scope
+```
+
+This keeps retrieval and generation failure modes distinct and avoids introducing a global state framework before the application requires one.
+
+### Citation Inspection Boundary
+
+Citation interaction uses the already validated source mapping returned by Phase 8.
+
+```text
+RAG answer text
+   │
+   ├─ CitationReference(start_index, end_index, source_id)
+   │
+   └─ CitationSource(source_id, EvidenceBlock)
+                         │
+                         ▼
+                 Evidence Inspector
+```
+
+The UI makes only recognised, validated citation references interactive. Selecting `[S1]` reveals the trusted `EvidenceBlock` already associated with `S1`; it does not perform a new retrieval query. This preserves the provenance of the exact generation request.
+
+Citation identity remains distinct from semantic entailment. Displaying a validated `S1` mapping means the source identifier resolves to evidence supplied to the model, not that the application has proven every surrounding claim is entailed by that evidence.
+
+### Unicode Citation Offsets
+
+Python string indexes are code-point based while JavaScript strings expose UTF-16 code units. The frontend therefore renders citation ranges over `Array.from(answer)` so validated character offsets remain aligned when non-BMP Unicode characters appear before a citation.
+
+### Request Concurrency
+
+Search and RAG hooks maintain a monotonically increasing request sequence. Clearing results, changing scope, or starting a newer request invalidates older in-flight responses.
+
+```text
+request A starts
+      ↓
+request B starts or scope changes
+      ↓
+A becomes stale
+      ↓
+A eventually resolves
+      ↓
+response ignored
+```
+
+This prevents a result generated for an old document scope from appearing under the current scope. The current implementation ignores stale responses rather than requiring transport-level cancellation.
+
+### Frontend Testing Boundary
+
+The frontend test suite separates responsibilities across:
+
+- API client tests
+- document hook/component tests
+- search hook/result tests
+- RAG hook/answer tests
+- citation rendering tests
+- evidence provenance tests
+- App-level integration tests
+
+Frontend tests verify preservation and presentation of backend research state. They do not claim that a similarity score is good, that a retrieved passage is scientifically relevant, that a generated answer is correct, or that a cited source semantically entails a claim. Those questions belong to the evaluation phases.
+
+---
+
 ## Provider Abstractions
 
 The project uses explicit interfaces around external infrastructure and model boundaries.
@@ -1177,6 +1314,9 @@ The completed project is expected to evolve approximately toward:
                             │
                             ▼
                    Cited Answer + Evidence
+                            │
+                            ▼
+                       React Workspace
                             │
                             ▼
                         Evaluation
