@@ -1,12 +1,12 @@
 # Local RAG Research Assistant
 
-A local-first research assistant for querying and analysing research documents using Retrieval-Augmented Generation (RAG).
+A local-first research assistant for querying, analysing, and citing research documents using Retrieval-Augmented Generation (RAG).
 
-The project is built component by component to expose the engineering behind document processing, semantic retrieval, local language generation, bounded context construction, grounded answers, citation validation, evidence inspection, and later RAG evaluation without hiding the core pipeline behind a high-level RAG framework.
+The project is built component by component so the mechanics behind ingestion, chunking, embeddings, retrieval, context construction, local generation, citations, hybrid search, and later evaluation remain explicit and inspectable rather than being hidden behind a high-level RAG framework.
 
 ## Current Status
 
-**Phase 10 complete — full local research workspace from PDF indexing to interactive cited evidence.**
+**Phase 11 complete — local research workspace with selectable dense, lexical, and hybrid retrieval.**
 
 ```text
 Research PDF
@@ -15,21 +15,25 @@ Page Extraction & Normalisation
      ↓
 Model-Aware Chunking
      ↓
-Local Embeddings
+Local BGE Embeddings
      ↓
-Persistent Qdrant Vector Store
+Persistent Qdrant Storage
      ↓
-Semantic Retrieval
+Retrieval Router
+     │
+     ├── Dense Retrieval
+     ├── BM25 Lexical Retrieval
+     └── Hybrid Retrieval
+              ↓
+       Reciprocal Rank Fusion
      ↓
 Bounded Context Construction
      ↓
 Local LLM (Ollama / Qwen)
      ↓
-RAGResponse with [S1], [S2], ...
+Grounded RAG Response
      ↓
 Citation Parsing & Validation
-     ↓
-CitedRAGResponse
      ↓
 FastAPI
      ↓
@@ -38,70 +42,295 @@ React Research Workspace
 Interactive Answer + Evidence Inspection
 ```
 
-The system can ingest and index research PDFs, retrieve semantically relevant evidence, construct a token-bounded prompt, generate a local evidence-grounded answer, validate recognised citation identities, and let the user inspect the exact retrieved evidence associated with each validated source.
+The system can ingest and index research PDFs, preserve page and chunk provenance, retrieve evidence using multiple retrieval strategies, construct a token-bounded prompt, generate a local evidence-grounded answer, validate recognised citation identities, and allow the user to inspect the exact retrieved evidence associated with each validated source.
 
-Citation identity validation does **not** yet establish claim-level semantic entailment. Formal retrieval, answer-quality, abstention, and citation-support evaluation remains future work.
+Citation identity validation does **not** yet establish claim-level semantic entailment.
+
+Formal labelled retrieval evaluation, answer-quality evaluation, abstention evaluation, and citation-support evaluation remain future work.
+
+---
 
 ## Current Features
 
-### Document pipeline
+### Document Pipeline
 
-- PDF validation, page-level extraction, metadata, and conservative normalisation
-- SHA-256 document identity and page-level provenance preservation
+- PDF validation using PyMuPDF
+- Page-level text extraction
+- PDF metadata extraction
+- SHA-256 document identity
+- Conservative text normalisation
+- Encrypted and unusable PDF detection
+- Page-level provenance preservation
 - Typed document and chunk models
-- Encrypted/non-text PDF handling
-- Configurable token-aware, model-aligned chunking with deterministic IDs
-- Local BGE document/query embeddings with normalisation and batched inference
-- Persistent Qdrant vectors, chunk text, and provenance payloads
-- Collection compatibility checks, document replacement, listing, and deletion
+- Configurable token-aware chunking
+- Model-aligned Hugging Face tokenisation
+- Deterministic chunk identities
+- Configurable token overlap
+- Local document and query embeddings
+- Normalised BGE embeddings
+- Persistent Qdrant storage
+- Document replacement and deletion
+- Stored source text and provenance metadata
+
+Current chunking baseline:
+
+```text
+chunk size:     384 tokens
+chunk overlap:   64 tokens
+```
+
+Current embedding baseline:
+
+```text
+BAAI/bge-small-en-v1.5
+384 dimensions
+```
+
+### Retrieval
+
+The system exposes three retrieval strategies:
+
+```text
+Dense
+Lexical
+Hybrid
+```
+
+#### Dense Retrieval
+
+```text
+query
+ ↓
+BGE query embedding
+ ↓
+Qdrant cosine search
+ ↓
+ranked chunks
+```
+
+Dense remains the default retrieval strategy.
+
+#### Lexical Retrieval
+
+```text
+query
+ ↓
+lexical tokenisation
+ ↓
+BM25
+ ↓
+persisted DocumentChunk corpus
+ ↓
+ranked chunks
+```
+
+Current BM25 baseline:
+
+```text
+k1 = 1.5
+b  = 0.75
+```
+
+#### Hybrid Retrieval
+
+Hybrid retrieval combines dense and lexical rankings using Reciprocal Rank Fusion.
+
+```text
+               Query
+                 │
+       ┌─────────┴─────────┐
+       ▼                   ▼
+ Dense Retrieval      BM25 Retrieval
+       │                   │
+       └─────────┬─────────┘
+                 ▼
+                 RRF
+                 │
+                 ▼
+         Ranked Evidence
+```
+
+Current hybrid baseline:
+
+```text
+RRF rank constant:      60
+candidate multiplier:    2
+final top_k:             5
+```
+
+Raw cosine and BM25 scores are not averaged because they use incompatible numerical scales.
+
+### Retrieval Modes
+
+Retrieval mode can be selected through both:
+
+```text
+POST /search
+POST /query
+```
+
+Supported values:
+
+```text
+dense
+lexical
+hybrid
+```
+
+Dense remains the backward-compatible default.
 
 ### Retrieval and RAG
 
-- Dense semantic retrieval with top-k, optional thresholds, and document filtering
-- Typed and ranked retrieval results
-- Local Qwen generation through an Ollama-backed `LLMProvider`
-- Explicit context budgeting and chat-template-aware token estimation
-- Whole-chunk evidence selection, order preservation, and redundancy filtering
-- Grounding instructions and source-labelled evidence delimiters
-- No-evidence response without invoking the LLM when no usable evidence exists
-- Typed `RAGResponse` exposing evidence and generation diagnostics
+- Dense semantic retrieval using BGE + Qdrant
+- BM25 lexical retrieval
+- Reciprocal Rank Fusion
+- Selectable dense, lexical, and hybrid retrieval
+- Configurable top-k retrieval
+- Document-scoped retrieval
+- Dense-only optional cosine score thresholds
+- Typed `RetrievalResult`
+- Full chunk provenance reconstruction
+- Local Qwen generation through Ollama
+- Explicit context budgeting
+- Chat-template-aware token estimation
+- Whole-chunk evidence selection
+- Duplicate and high-overlap evidence filtering
+- Evidence-order preservation
+- Grounding instructions
+- Source-labelled evidence delimiters
+- Explicit insufficient-evidence fallback
+- Typed `RAGResponse`
+- Prompt-token diagnostics
+- Local generation diagnostics
 
-### Citation integrity
+### Citation Integrity
 
-- Strict `[S1]`, `[S2]`, ... inline citation protocol
-- Citation parsing with character offsets and unique-source mapping
-- Rejection of unknown source identifiers and missing citations in evidence-backed answers
-- Source metadata recovered from trusted `EvidenceBlock` provenance, not generated by the model
-- Typed `CitedRAGResponse` with distinct inline references and cited sources
+- Strict `[S1]`, `[S2]`, ... citation protocol
+- Citation parsing with character offsets
+- Mapping from prompt-local source IDs to trusted evidence
+- Rejection of unknown recognised source IDs
+- Rejection of missing citations in evidence-backed answers
+- Document/page/chunk provenance recovered from stored evidence
+- Generated filenames and page numbers are not trusted
+- Typed `CitedRAGResponse`
+- Interactive source inspection in the frontend
+
+Citation identity validation should not be confused with semantic entailment.
 
 ### API
 
-- FastAPI application layer with typed request/response models
-- `GET /health`
-- `POST /documents`
-- `GET /documents`
-- `DELETE /documents/{document_id}`
-- `POST /search`
-- `POST /query`
-- Central `ResearchService` composition boundary
-- Local lifecycle cleanup for Qdrant and Ollama resources
+FastAPI exposes:
+
+```text
+GET    /health
+POST   /documents
+GET    /documents
+DELETE /documents/{document_id}
+POST   /search
+POST   /query
+```
+
+The application layer provides typed request and response models, document indexing, retrieval strategy selection, document management, cited RAG question answering, error mapping, and runtime lifecycle cleanup.
 
 ### Frontend
 
-- React + TypeScript + Vite research workspace
-- Central typed `ResearchAPIClient`
-- PDF upload, listing, selection, replacement, and deletion
-- Whole-corpus and document-scoped search/query modes
-- Ranked semantic-search evidence cards
-- Cited RAG answer rendering
-- Interactive validated `[S1]`, `[S2]`, ... citation controls
-- Exact `EvidenceBlock` inspection with document/page/chunk provenance
-- Generation diagnostics
-- Insufficient-evidence, loading, error, and empty-library states
+The React research workspace provides:
+
+- indexed document listing
+- PDF upload
+- document replacement
+- document deletion
+- corpus-wide scope
+- document-specific scope
+- Ask mode
+- Search mode
+- Dense / Lexical / Hybrid selector
+- ranked evidence cards
+- retrieval-score display
+- cited RAG answers
+- clickable validated citations
+- evidence provenance inspection
+- generation diagnostics
+- insufficient-evidence presentation
+- loading and error states
 - `Cmd/Ctrl + Enter` submission
-- Stale asynchronous-response protection across scope/request changes
-- Frontend unit, component, and integration tests
-- Real local browser ↔ API ↔ model smoke workflow
+- stale-response protection
+
+Changing document scope or retrieval strategy invalidates older in-flight search/RAG responses.
+
+---
+
+## Phase 11 Hybrid Retrieval Experiment
+
+Phase 11 includes a controlled smoke comparison using the same six queries with:
+
+```text
+top_k = 5
+
+Dense
+Lexical
+Hybrid
+```
+
+Average top-five Jaccard overlap:
+
+```text
+Dense ↔ Lexical    ≈ 0.214
+Dense ↔ Hybrid     ≈ 0.478
+Lexical ↔ Hybrid   ≈ 0.507
+```
+
+Top-result agreement:
+
+```text
+Dense ↔ Lexical    2 / 6
+Dense ↔ Hybrid     3 / 6
+Lexical ↔ Hybrid   4 / 6
+```
+
+The important finding is not that one retriever "won".
+
+Instead, dense and lexical retrieval produced meaningfully different candidate sets while hybrid retrieval incorporated evidence from both.
+
+### Example: `Adam optimizer`
+
+For:
+
+```text
+Adam optimizer
+```
+
+dense retrieval ranked a bibliography passage containing the Adam paper first.
+
+The actual Transformer optimizer-method section appeared second.
+
+BM25 promoted the actual optimizer section to rank 1.
+
+Hybrid retrieval also promoted that section to rank 1.
+
+This is a concrete example of lexical retrieval complementing semantic retrieval.
+
+### Important Claim Boundary
+
+The six-query experiment demonstrates retrieval behaviour and complementarity.
+
+It does **not** establish that hybrid retrieval has higher retrieval accuracy.
+
+Formal labelled evaluation will be introduced later using metrics such as:
+
+```text
+Recall@K
+Precision@K
+MRR
+nDCG
+```
+
+See:
+
+- [Hybrid Retrieval](docs/hybrid-retrieval.md)
+- [Experiments](docs/experiments.md)
+
+---
 
 ## Architecture
 
@@ -109,58 +338,67 @@ Citation identity validation does **not** yet establish claim-level semantic ent
                                User
                                 │
                                 ▼
-                         React / TypeScript
-                                │
-                                ▼
-                        ResearchAPIClient
+                         React Workspace
                                 │
                                 ▼
                              FastAPI
                                 │
                                 ▼
-                         ResearchService
+                        ResearchService
                                 │
-              ┌─────────────────┼─────────────────┐
-              │                 │                 │
-              ▼                 ▼                 ▼
-       LocalPDFIndexer    SemanticRetriever    RAGService
-              │                 │                 │
-              ▼                 ▼                 ▼
-        Ingestion →       Query Embedding     Context Builder
-        Chunking →              │                 │
-        Embeddings →            ▼                 ▼
-        Qdrant            Ranked Evidence     Ollama / Qwen
-                                                  │
-                                                  ▼
-                                              RAGResponse
-                                                  │
-                                                  ▼
-                                           CitationService
-                                                  │
-                                                  ▼
-                                          CitedRAGResponse
-                                                  │
-                                                  ▼
-                                     Interactive Evidence Inspector
+                 ┌──────────────┴──────────────┐
+                 │                             │
+                 ▼                             ▼
+            Document Pipeline             RetrievalRouter
+                 │                             │
+                 ▼                  ┌──────────┼──────────┐
+               Qdrant              ▼          ▼          ▼
+                               Dense      Lexical      Hybrid
+                                 │           │           │
+                                 │           │       Dense + BM25
+                                 │           │           │
+                                 │           │           ▼
+                                 │           │          RRF
+                                 └───────────┴───────────┘
+                                             │
+                                             ▼
+                                      ContextBuilder
+                                             │
+                                             ▼
+                                      Ollama / Qwen
+                                             │
+                                             ▼
+                                          RAGResponse
+                                             │
+                                             ▼
+                                      CitationService
+                                             │
+                                             ▼
+                                       CitedRAGResponse
 ```
 
-The browser remains an API client. It does not directly access Qdrant, the tokenizer, embedding model, context builder, or Ollama.
-
-See [System Architecture](docs/architecture.md), [RAG API](docs/api.md), [Frontend Research Workspace](docs/frontend.md), [End-to-End RAG Pipeline](docs/rag-pipeline.md), and [Citation Integrity](docs/citations.md).
+---
 
 ## Tech Stack
 
 ### Backend
 
 - Python 3.13
-- FastAPI; Pydantic; HTTPX
+- FastAPI
+- Pydantic
+- HTTPX
 - PyMuPDF
-- Hugging Face Transformers; Sentence Transformers
+- Hugging Face Transformers
+- Sentence Transformers
 - `BAAI/bge-small-en-v1.5`
 - NumPy
 - Qdrant
-- Ollama; Qwen3.5
-- Poetry; Pytest; Ruff; Mypy
+- Ollama
+- Qwen3.5
+- Poetry
+- Pytest
+- Ruff
+- Mypy
 
 ### Frontend
 
@@ -171,12 +409,12 @@ See [System Architecture](docs/architecture.md), [RAG API](docs/api.md), [Fronte
 - Testing Library
 - jsdom
 
+---
+
 ## Project Structure
 
 ```text
 src/research_assistant/
-├── main.py
-├── config.py
 ├── api/
 ├── ingestion/
 ├── chunking/
@@ -199,13 +437,18 @@ tests/
 └── citations/
 
 frontend/
-├── src/
-│   ├── api/
-│   ├── documents/
-│   ├── search/
-│   └── query/
-├── package.json
-└── vite.config.ts
+└── src/
+    ├── api/
+    ├── documents/
+    ├── search/
+    └── query/
+
+scripts/
+└── compare_retrieval_modes.py
+
+experiments/
+├── retrieval_queries.json
+└── results/
 
 docs/
 ├── architecture.md
@@ -216,12 +459,15 @@ docs/
 ├── embeddings.md
 ├── vector-store.md
 ├── retrieval.md
+├── hybrid-retrieval.md
 ├── generation.md
 ├── rag-pipeline.md
 ├── citations.md
 ├── experiments.md
 └── roadmap.md
 ```
+
+---
 
 ## Development
 
@@ -278,26 +524,30 @@ Open:
 http://localhost:5173
 ```
 
-The Vite development server proxies `/api/*` requests to the local FastAPI server.
+---
 
 ## Local Model Runtime
 
-The generation baseline uses a local Ollama model. Ensure Ollama is installed and running, then:
+Ensure the configured Ollama model is available:
 
 ```bash
 ollama pull qwen3.5:9b
 ollama list
 ```
 
-Model files are managed outside this repository and are not committed to Git.
+Search mode does not require LLM generation.
 
-Semantic Search does not invoke the LLM. Ask mode requires the configured local model.
+Ask mode requires the configured local model.
+
+---
 
 ## Local Documents and Data
 
-Research documents belong in the project's local data workflow, while the persistent vector store is created under `data/vector_store/`. These paths, environment files, and local model artifacts should remain excluded from version control.
+Local documents, vector storage, environment files, generated model files, and raw experiment result dumps should not be committed.
 
-The Qdrant payload contains source text and provenance metadata, so the vector store should be treated as potentially private research data rather than merely disposable cache.
+Qdrant stores source text and provenance metadata, so the local vector store should be treated as potentially private research data.
+
+---
 
 ## Documentation
 
@@ -308,33 +558,38 @@ The Qdrant payload contains source text and provenance metadata, so the vector s
 - [Document Chunking](docs/chunking.md)
 - [Embeddings](docs/embeddings.md)
 - [Vector Storage](docs/vector-store.md)
-- [Semantic Retrieval](docs/retrieval.md)
+- [Retrieval](docs/retrieval.md)
+- [Hybrid Retrieval](docs/hybrid-retrieval.md)
 - [Local Generation](docs/generation.md)
 - [End-to-End RAG Pipeline](docs/rag-pipeline.md)
 - [Citation Integrity](docs/citations.md)
 - [Experiments](docs/experiments.md)
 - [Development Roadmap](docs/roadmap.md)
 
+---
+
 ## Roadmap
 
-**Completed:** Foundation, ingestion, token-aware chunking, local embeddings, persistent Qdrant storage, semantic retrieval, local LLM integration, end-to-end RAG, citation integrity, FastAPI application layer, and the React research workspace.
+**Completed through Phase 11:** foundation, ingestion, token-aware chunking, local embeddings, persistent Qdrant storage, dense retrieval, local LLM integration, end-to-end RAG, citation integrity, FastAPI, React workspace, BM25 lexical retrieval, Reciprocal Rank Fusion, and selectable hybrid retrieval.
 
-**Next:** Hybrid retrieval, followed by reranking and formal evaluation.
+**Next:** Phase 12 — cross-encoder reranking.
 
-**Later:** Research-specific synthesis features, observability, containerisation, reproducible demo/deployment, and controlled benchmarking/technical reporting.
-
-## Design Principles
-
-- **Local first:** keep research documents, vectors, retrieval, and inference local where practical.
-- **Preserve provenance:** trace retrieved material and cited evidence back to original pages and chunks.
-- **Understand before abstracting:** implement inspectable mechanics before high-level RAG frameworks.
-- **Separate responsibilities:** parsing, embeddings, storage, retrieval, context construction, generation, citations, HTTP transport, and browser presentation remain explicit boundaries.
-- **Bound the context:** allocate evidence within explicit model and output budgets.
-- **Treat retrieved text as data:** never promote document content into application instructions.
-- **Validate model output:** only application-known source IDs may appear as validated citations.
-- **Keep identity separate from entailment:** a valid citation mapping is not yet proof that evidence supports a specific claim.
-- **Measure instead of guess:** benchmark retrieval, grounding, citation behaviour, latency, and memory before claiming effectiveness.
+**After that:** Phase 13 — formal labelled retrieval and RAG evaluation.
 
 ---
 
-🚧 Under active development. Phase 10 is complete; Phase 11 hybrid retrieval is next.
+## Design Principles
+
+- **Local first:** keep documents, vectors, retrieval, and model inference local where practical.
+- **Preserve provenance:** trace evidence to its document, page, and chunk.
+- **Understand before abstracting:** expose RAG mechanics before adding high-level frameworks.
+- **Separate responsibilities:** ingestion, embeddings, storage, retrieval, generation, citations, HTTP transport, and UI remain explicit boundaries.
+- **Bound context:** treat model context as a finite resource.
+- **Treat retrieved text as data:** document text does not become application instructions.
+- **Validate model output:** only application-known source IDs can become trusted citations.
+- **Keep identity separate from entailment:** citation identity is not claim-level proof.
+- **Measure instead of guess:** do not claim retrieval improvements without evaluation evidence.
+
+---
+
+🚧 Under active development. Phase 11 hybrid retrieval is complete; Phase 12 reranking is next.

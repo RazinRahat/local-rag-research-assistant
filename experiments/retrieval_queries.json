@@ -1,0 +1,26 @@
+[
+  {
+    "id": "exact_optimizer",
+    "query": "Adam optimizer"
+  },
+  {
+    "id": "rare_term",
+    "query": "label smoothing"
+  },
+  {
+    "id": "semantic_paraphrase",
+    "query": "Why can the model process sequence positions in parallel?"
+  },
+  {
+    "id": "concept",
+    "query": "How does multi-head attention work?"
+  },
+  {
+    "id": "dataset",
+    "query": "What datasets were used to evaluate the model?"
+  },
+  {
+    "id": "architecture",
+    "query": "Why does the Transformer avoid recurrent computation?"
+  }
+]

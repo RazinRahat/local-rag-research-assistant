@@ -41,3 +41,6 @@ models/
 # Logs
 *.log
 logs/
+
+# Local experiment outputs
+experiments/results/*.json

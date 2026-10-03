@@ -29,17 +29,25 @@ export interface RetrievalResult {
   chunk: DocumentChunk;
 }
 
+export type RetrievalMode =
+  | "dense"
+  | "lexical"
+  | "hybrid";
+
 export interface RetrievalOptions {
   top_k?: number;
   score_threshold?: number | null;
   document_id?: string | null;
+  mode?: RetrievalMode;
 }
 
-export interface SearchRequest extends RetrievalOptions {
+export interface SearchRequest
+  extends RetrievalOptions {
   query: string;
 }
 
-export interface QueryRequest extends RetrievalOptions {
+export interface QueryRequest
+  extends RetrievalOptions {
   question: string;
 }
 

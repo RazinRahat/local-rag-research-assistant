@@ -423,3 +423,63 @@ class QdrantVectorStore:
             )
             for document_id in sorted(counts)
         )
+
+    def list_chunks(
+        self,
+        document_id: str | None = None,
+    ) -> tuple[DocumentChunk, ...]:
+        """Return persisted chunks for lexical retrieval."""
+
+        if not self._client.collection_exists(self._config.collection_name):
+            return ()
+
+        query_filter = None
+
+        if document_id is not None:
+            query_filter = _document_filter(document_id)
+
+        chunks: list[DocumentChunk] = []
+
+        offset = None
+
+        while True:
+            records, offset = self._client.scroll(
+                collection_name=(self._config.collection_name),
+                scroll_filter=query_filter,
+                offset=offset,
+                limit=256,
+                with_payload=[
+                    "chunk_id",
+                    "document_id",
+                    "file_name",
+                    "page_number",
+                    "chunk_index",
+                    "page_chunk_index",
+                    "text",
+                    "token_count",
+                    "char_count",
+                    "token_start",
+                    "token_end",
+                ],
+                with_vectors=False,
+            )
+
+            for record in records:
+                if record.payload is None:
+                    raise ValueError("Stored point is missing chunk payload")
+
+                chunks.append(_payload_to_chunk(dict(record.payload)))
+
+            if offset is None:
+                break
+
+        return tuple(
+            sorted(
+                chunks,
+                key=lambda chunk: (
+                    chunk.document_id,
+                    chunk.chunk_index,
+                    chunk.chunk_id,
+                ),
+            )
+        )

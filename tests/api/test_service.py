@@ -10,6 +10,7 @@ from research_assistant.citations.service import CitationService
 from research_assistant.rag.models import RAGResponse
 from research_assistant.retrieval.models import (
     RetrievalConfig,
+    RetrievalMode,
     RetrievalResult,
 )
 from research_assistant.vector_store.models import StoredDocument
@@ -74,6 +75,7 @@ class FakeRegistry:
 class FakeRetriever:
     def __init__(self) -> None:
         self.query: str | None = None
+        self.config: RetrievalConfig | None = None
 
     def retrieve(
         self,
@@ -81,6 +83,8 @@ class FakeRetriever:
         config: RetrievalConfig | None = None,
     ) -> tuple[RetrievalResult, ...]:
         self.query = query
+        self.config = config
+
         return ()
 
 
@@ -179,13 +183,21 @@ def test_missing_document_is_rejected() -> None:
 def test_search_uses_retriever() -> None:
     service, _, _, retriever, _ = make_service()
 
+    config = RetrievalConfig(
+        top_k=3,
+        mode=RetrievalMode.HYBRID,
+    )
+
     results = service.search(
         "What is attention?",
-        RetrievalConfig(top_k=3),
+        config,
     )
 
     assert results == ()
+
     assert retriever.query == "What is attention?"
+
+    assert retriever.config is config
 
 
 def test_query_validates_rag_response() -> None:

@@ -11,6 +11,10 @@ import {
   type QueryRequest,
 } from "../api";
 
+import type {
+  RetrievalMode,
+} from "../api/models";
+
 export interface RAGQueryClient {
   query(
     request: QueryRequest,
@@ -22,10 +26,13 @@ interface UseResearchQueryResult {
   lastQuestion: string | null;
   isQuerying: boolean;
   error: string | null;
+
   runQuery: (
     question: string,
     documentId: string | null,
+    retrievalMode?: RetrievalMode,
   ) => Promise<boolean>;
+
   clearQuery: () => void;
   clearError: () => void;
 }
@@ -81,6 +88,8 @@ export function useResearchQuery(
       async (
         question: string,
         documentId: string | null,
+        retrievalMode:
+          RetrievalMode = "dense",
       ): Promise<boolean> => {
         const cleanQuestion =
           question.trim();
@@ -101,7 +110,8 @@ export function useResearchQuery(
         setResponse(null);
 
         try {
-          const request: QueryRequest = {
+          const request:
+            QueryRequest = {
             question: cleanQuestion,
             top_k: 5,
           };
@@ -109,6 +119,18 @@ export function useResearchQuery(
           if (documentId) {
             request.document_id =
               documentId;
+          }
+
+          /*
+           * Dense remains implicit so
+           * old Phase 10 requests retain
+           * their original shape.
+           */
+          if (
+            retrievalMode !== "dense"
+          ) {
+            request.mode =
+              retrievalMode;
           }
 
           const result =
@@ -124,6 +146,7 @@ export function useResearchQuery(
           }
 
           setResponse(result);
+
           setLastQuestion(
             cleanQuestion,
           );

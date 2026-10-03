@@ -1,14 +1,18 @@
 """HTTP request and response models for the research API."""
 
+from typing import Self
+
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     field_validator,
+    model_validator,
 )
 
 from research_assistant.retrieval.models import (
     RetrievalConfig,
+    RetrievalMode,
     RetrievalResult,
 )
 
@@ -38,18 +42,32 @@ class RetrievalOptions(BaseModel):
         pattern=r"^[a-f0-9]{64}$",
     )
 
-    def to_retrieval_config(self) -> RetrievalConfig:
-        """Convert HTTP options into the existing domain model."""
+    mode: RetrievalMode = RetrievalMode.DENSE
+
+    @model_validator(mode="after")
+    def validate_threshold_mode(
+        self,
+    ) -> Self:
+        if self.mode != RetrievalMode.DENSE and self.score_threshold is not None:
+            raise ValueError("score_threshold is only supported for dense retrieval")
+
+        return self
+
+    def to_retrieval_config(
+        self,
+    ) -> RetrievalConfig:
+        """Convert HTTP options into the domain model."""
 
         return RetrievalConfig(
             top_k=self.top_k,
-            score_threshold=self.score_threshold,
+            score_threshold=(self.score_threshold),
             document_id=self.document_id,
+            mode=self.mode,
         )
 
 
 class SearchRequest(RetrievalOptions):
-    """Request body for semantic retrieval."""
+    """Request body for retrieval."""
 
     query: str = Field(
         min_length=1,
@@ -58,7 +76,10 @@ class SearchRequest(RetrievalOptions):
 
     @field_validator("query")
     @classmethod
-    def validate_query(cls, value: str) -> str:
+    def validate_query(
+        cls,
+        value: str,
+    ) -> str:
         clean_value = value.strip()
 
         if not clean_value:
@@ -77,7 +98,10 @@ class QueryRequest(RetrievalOptions):
 
     @field_validator("question")
     @classmethod
-    def validate_question(cls, value: str) -> str:
+    def validate_question(
+        cls,
+        value: str,
+    ) -> str:
         clean_value = value.strip()
 
         if not clean_value:
@@ -87,10 +111,13 @@ class QueryRequest(RetrievalOptions):
 
 
 class SearchResponse(BaseModel):
-    """Response returned by the semantic-search endpoint."""
+    """Response returned by the search endpoint."""
 
     model_config = ConfigDict(frozen=True)
 
     query: str
 
-    results: tuple[RetrievalResult, ...]
+    results: tuple[
+        RetrievalResult,
+        ...,
+    ]

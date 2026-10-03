@@ -14,6 +14,7 @@ from research_assistant.citations.models import (
 from research_assistant.rag.models import RAGResponse
 from research_assistant.retrieval.models import (
     RetrievalConfig,
+    RetrievalMode,
     RetrievalResult,
 )
 from research_assistant.vector_store.models import StoredDocument
@@ -191,6 +192,8 @@ def test_search_request() -> None:
     assert service.search_config is not None
     assert service.search_config.top_k == 3
 
+    assert service.search_config.mode == RetrievalMode.DENSE
+
 
 def test_query_request() -> None:
     client, service = make_client()
@@ -232,6 +235,90 @@ def test_invalid_top_k_is_rejected() -> None:
         json={
             "query": "attention",
             "top_k": 0,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_search_request_supports_hybrid_mode() -> None:
+    client, service = make_client()
+
+    response = client.post(
+        "/search",
+        json={
+            "query": ("What is attention?"),
+            "top_k": 5,
+            "mode": "hybrid",
+        },
+    )
+
+    assert response.status_code == 200
+
+    assert service.search_config is not None
+
+    assert service.search_config.mode == RetrievalMode.HYBRID
+
+
+def test_search_request_supports_lexical_mode() -> None:
+    client, service = make_client()
+
+    response = client.post(
+        "/search",
+        json={
+            "query": ("Adam optimizer"),
+            "mode": "lexical",
+        },
+    )
+
+    assert response.status_code == 200
+
+    assert service.search_config is not None
+
+    assert service.search_config.mode == RetrievalMode.LEXICAL
+
+
+def test_query_request_supports_hybrid_mode() -> None:
+    client, service = make_client()
+
+    response = client.post(
+        "/query",
+        json={
+            "question": ("Why does the model avoid recurrence?"),
+            "mode": "hybrid",
+        },
+    )
+
+    assert response.status_code == 200
+
+    assert service.query_config is not None
+
+    assert service.query_config.mode == RetrievalMode.HYBRID
+
+
+def test_hybrid_request_rejects_score_threshold() -> None:
+    client, _ = make_client()
+
+    response = client.post(
+        "/search",
+        json={
+            "query": "attention",
+            "mode": "hybrid",
+            "score_threshold": 0.5,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_invalid_retrieval_mode_is_rejected() -> None:
+    client, _ = make_client()
+
+    response = client.post(
+        "/search",
+        json={
+            "query": "attention",
+            "mode": "unknown",
         },
     )
 

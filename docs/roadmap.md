@@ -1,137 +1,142 @@
 # Development Roadmap
 
-The project is being developed incrementally so each RAG component can be understood, tested, and validated before the next dependency is introduced. Completed phases describe implemented capabilities; future phases are proposals, not claims of current functionality.
+The project is developed incrementally so each RAG component can be understood, tested, and validated before introducing the next layer.
+
+---
 
 ## Phase 0 — Project Foundation ✅
 
-- Python environment and Poetry dependency management
-- FastAPI application and health endpoint
-- Ruff, Mypy, and Pytest
-- Repository structure and Git/GitHub workflow
+- Python project
+- Poetry
+- FastAPI
+- health endpoint
+- Ruff
+- Mypy
+- Pytest
+- repository structure
+- Git/GitHub workflow
+
+---
 
 ## Phase 1 — Document Ingestion ✅
 
-- PDF validation and PyMuPDF extraction
-- Page-level document representation and PDF metadata
-- SHA-256 document identity
-- Conservative text normalisation
-- Encrypted PDF detection and provenance preservation
+- PDF validation
+- PyMuPDF extraction
+- page-level representation
+- PDF metadata
+- SHA-256 identity
+- conservative normalisation
+- encrypted PDF detection
+- unusable/non-text PDF handling
+- page-level provenance
+
+---
 
 ## Phase 2 — Document Chunking ✅
 
-- Tokenizer abstraction and overlapping token windows
-- Typed chunk metadata and deterministic chunk identity
-- Page-local provenance and configurable size/overlap
-- Model-aware Hugging Face tokenisation
+- tokenizer abstraction
+- Hugging Face tokenizer
+- overlapping token windows
+- chunk metadata
+- deterministic chunk identity
+- page-local provenance
+- configurable size and overlap
+
+Baseline:
+
+```text
+384 tokens
+64-token overlap
+```
+
+---
 
 ## Phase 3 — Embeddings ✅
 
-- Sentence Transformers integration and BGE-small-en-v1.5 baseline
-- Query/document embeddings and vector normalisation
-- Batched inference, provider abstraction, and model-aware chunking
-- Semantic similarity smoke testing
+- Sentence Transformers
+- `BAAI/bge-small-en-v1.5`
+- document/query embeddings
+- normalised vectors
+- batched inference
+- provider abstraction
+
+---
 
 ## Phase 4 — Vector Storage ✅
 
-- Persistent local Qdrant and vector-store abstraction
-- Collection creation and compatibility validation
-- Cosine vector space, payloads, and deterministic point IDs
-- Vector insertion, document deletion, and re-indexing/replacement
-- Document metadata filtering and persistence tests
-- Isolated in-memory Qdrant tests
+- persistent local Qdrant
+- cosine collection
+- deterministic point IDs
+- chunk payload persistence
+- document replacement/deletion
+- compatibility validation
+- provenance reconstruction
 
-## Phase 5 — Semantic Retrieval ✅
+---
 
-- Query embedding and dense nearest-neighbour search
-- Top-k retrieval, similarity scores, and typed results
-- Source provenance reconstruction, score thresholds, and document filtering
-- Retriever abstraction, unit tests, Qdrant tests, and manual search validation
+## Phase 5 — Dense Semantic Retrieval ✅
+
+- query embedding
+- nearest-neighbour search
+- top-k retrieval
+- cosine scoring
+- document filtering
+- optional threshold
+- typed results
+- retrieval tests
+- smoke testing
+
+---
 
 ## Phase 6 — Local LLM ✅
 
-- Ollama runtime with a Qwen3.5 development baseline
-- `LLMProvider`, typed chat messages, and `GenerationResult`
-- Configurable context/output budgets and inference settings
-- Non-streaming baseline and thinking-output control
-- Token accounting, load/prefill/generation timing, and domain exceptions
-- Mock HTTP tests and local inference smoke-testing workflow
+- LLM provider abstraction
+- Ollama
+- local Qwen baseline
+- structured chat messages
+- token controls
+- token accounting
+- inference diagnostics
+- runtime error translation
+
+---
 
 ## Phase 7 — End-to-End RAG ✅
-
-- RAG orchestration (`Retriever` → `ContextBuilder` → `LLMProvider`)
-- Explicit prompt budget, reserved output, and safety margin
-- Chat-template-aware token counting and estimated-vs-actual token tracking
-- Whole-chunk selection in retrieval order
-- Identical/highly overlapping evidence filtering
-- Temporary source labels and evidence delimiters
-- Grounding instructions and untrusted-document isolation
-- No-evidence generation bypass and typed `RAGResponse`
-- Context-builder tests, orchestration tests, and full local RAG smoke-test workflow
-
-## Phase 8 — Citation Integrity ✅
-
-- Strict model-facing citation instructions using `[S1]`, `[S2]`, …
-- Independent `citations/` layer after RAG generation
-- `CitationReference` with source ID and character offsets
-- `CitationSource` mapping to trusted `EvidenceBlock`
-- `CitationValidationResult` preserving references and unique sources
-- `CitedRAGResponse` containing both original RAG output and validated citations
-- Citation parser for recognised `[S#]` syntax
-- Rejection of unknown recognised source identifiers
-- Rejection of citation-free evidence-backed answers
-- Detection of duplicate source IDs in supplied evidence
-- Citation-free handling of explicit insufficient-evidence responses
-- Provenance access through source chunk, document, filename, and page
-- Parser, validator, and service unit tests
-- Real local cited-RAG smoke-testing workflow
-
-**Boundary of Phase 8:** source-reference identity is validated; universal malformed-format detection, per-claim citation coverage, and semantic claim-to-evidence entailment are **not yet** implemented. Display-ready UI source rendering follows in the API/UI phases.
-
-The current cited-RAG path is:
 
 ```text
 question
  ↓
-semantic retrieval
+retrieval
  ↓
-selected EvidenceBlock[] with S1, S2, ...
+context construction
  ↓
-bounded grounded prompt
+local generation
  ↓
-local LLM
- ↓
-RAGResponse with inline [S#] references
- ↓
-CitationService: parse → validate → map
- ↓
-CitedRAGResponse
+grounded answer
 ```
+
+Also includes context budgeting, evidence labels, redundancy filtering, whole-chunk selection, insufficient-evidence fallback, and typed `RAGResponse`.
+
+---
+
+## Phase 8 — Citation Integrity ✅
+
+- `[S1]`, `[S2]`, ... protocol
+- citation parser
+- character offsets
+- source mapping
+- unknown-ID rejection
+- missing-citation validation
+- trusted provenance
+- typed `CitedRAGResponse`
+
+Boundary: citation identity validation does not yet prove claim-level semantic entailment.
+
+---
 
 ## Phase 9 — RAG API ✅
 
-- Typed FastAPI request and response models
-- Shared retrieval options with validation and conversion to `RetrievalConfig`
-- Explicit application errors and domain-to-HTTP error translation
-- `ResearchAPI` application boundary and `ResearchService` orchestration
-- `LocalPDFIndexer` connecting PDF ingestion, chunking, embeddings, and vector persistence
-- Configurable upload-size protection and invalid/non-indexable PDF handling
-- `StoredDocument` representation for indexed-document summaries
-- Qdrant document enumeration through chunk-payload aggregation
-- Document upload/indexing, listing, and deletion endpoints
-- Retrieval-only `/search` endpoint
-- Full cited-RAG `/query` endpoint returning `CitedRAGResponse`
-- Existing lightweight `/health` endpoint preserved
-- Runtime composition for tokenizer, BGE embeddings, Qdrant, retrieval, context construction, Ollama, RAG, and citation validation
-- Lazy application-service construction
-- FastAPI lifespan cleanup for shared Qdrant and Ollama resources
-- Route tests with a fake `ResearchAPI`
-- Application-service tests using lightweight fake dependencies
-- Concrete indexer tests using generated PDFs
-- Regression tests preserving earlier ingestion, retrieval, vector-store, RAG, and citation behaviour
-- Real local indexing and full HTTP smoke-testing workflows
-- Swagger/OpenAPI route inspection
-
-The implemented routes are:
+Implemented routes:
 
 ```text
 GET    /health
@@ -142,121 +147,232 @@ POST   /search
 POST   /query
 ```
 
-**Boundary of Phase 9:** the API is a local, single-process development baseline. Authentication, multi-user isolation, background jobs, public deployment hardening, distributed workers, streaming generation, and production observability remain outside this phase.
+Also includes request/response schemas, service boundaries, document indexing, registry operations, error mapping, runtime composition, lifecycle cleanup, API tests, and local HTTP smoke testing.
 
-The current application path is:
-
-```text
-HTTP request
-     ↓
-FastAPI
-     ↓
-ResearchAPI / ResearchService
-     ↓
-existing ingestion / retrieval / RAG components
-     ↓
-CitedRAGResponse or retrieval/document result
-     ↓
-HTTP JSON
-```
+---
 
 ## Phase 10 — User Interface ✅
 
-Phase 10 adds a browser-based research workspace on top of the Phase 9 HTTP API without bypassing the existing application boundaries.
+- React + TypeScript
+- Vite
+- central API client
+- document upload/selection/deletion
+- corpus-wide and document-scoped retrieval
+- Ask mode
+- Search mode
+- cited-answer rendering
+- evidence inspector
+- generation diagnostics
+- loading/error/empty states
+- keyboard submission
+- stale-request protection
+- frontend tests
+
+---
+
+## Phase 11 — Hybrid Retrieval ✅
+
+### Lexical Retrieval
+
+- BM25 retriever
+- lexical tokenizer
+- shared persisted chunk corpus
+- lexical unit tests
+
+Baseline:
+
+```text
+k1 = 1.5
+b = 0.75
+```
+
+### Qdrant Chunk Corpus
+
+- persisted chunk enumeration
+- document-scoped chunk retrieval
+- full `DocumentChunk` reconstruction
+- separate `ChunkCorpus` protocol
+- unchanged dense `VectorStore` protocol
+
+### Reciprocal Rank Fusion
+
+```text
+RRF(d) = Σ 1 / (k + rank_i(d))
+```
+
+Baseline:
+
+```text
+k = 60
+```
+
+### Hybrid Retriever
+
+```text
+Dense candidates
++
+Lexical candidates
+ ↓
+RRF
+ ↓
+Final ranked evidence
+```
+
+Candidate multiplier:
+
+```text
+2
+```
+
+### Retrieval Routing
+
+Supported modes:
+
+```text
+dense
+lexical
+hybrid
+```
+
+Dense remains the default.
+
+The same router is used by `/search` and `/query`.
+
+### Frontend
 
 Implemented:
 
-- React + TypeScript frontend built with Vite
-- Development proxy from `/api/*` to the local FastAPI server
-- Typed frontend models and a central `ResearchAPIClient`
-- Indexed-document loading, PDF upload, replacement, selection, and deletion
-- Corpus-wide and document-scoped semantic search
-- Ranked evidence cards with filename, page, score, chunk text, and retrieval metadata
-- Cited RAG question answering through `/query`
-- Explicit insufficient-evidence presentation
-- Validated inline citation controls for `[S1]`, `[S2]`, ...
-- Evidence inspection using the exact `EvidenceBlock` associated with the generation request
-- Trusted document/page/chunk provenance display
-- Local generation diagnostics display
-- Loading, error, empty-library, and destructive-action states
-- `Cmd/Ctrl + Enter` submission while preserving normal textarea newlines
-- Protection against stale search/RAG responses overwriting newer scope or request state
-- Frontend unit/component/integration tests
-- Manual end-to-end workflow across upload, search, RAG, citation inspection, scope changes, and deletion
-
-Phase 10 intentionally keeps the browser as an API client. It does not access Qdrant, the embedding model, the tokenizer, or Ollama directly.
-
-The implemented browser path is:
-
 ```text
-React UI
-   ↓
-ResearchAPIClient
-   ↓
-/api/* through Vite development proxy
-   ↓
-FastAPI
-   ↓
-ResearchService
-   ↓
-existing Phase 1–8 components
+Dense | Lexical | Hybrid
 ```
 
-The initial frontend is a local research workspace rather than a public multi-user application. Authentication, streaming responses, public deployment hardening, and broader product polish remain future work.
+Changing retrieval mode invalidates existing and in-flight research results.
 
-## Phase 11 — Hybrid Retrieval
+### Controlled Smoke Comparison
+
+Six-query whole-corpus comparison:
+
+```text
+top_k = 5
+```
+
+Average top-five Jaccard overlap:
+
+```text
+Dense ↔ Lexical    ≈ 0.214
+Dense ↔ Hybrid     ≈ 0.478
+Lexical ↔ Hybrid   ≈ 0.507
+```
+
+A useful exact-term example was `Adam optimizer`, where dense ranked the actual optimizer-method passage second while lexical and hybrid promoted it to rank one.
+
+Phase 11 demonstrates complementary retrieval behaviour.
+
+It does not claim that hybrid retrieval has higher accuracy.
+
+Detailed findings:
+
+```text
+docs/hybrid-retrieval.md
+docs/experiments.md
+```
+
+---
+
+## Phase 12 — Reranking ← NEXT
 
 Planned:
 
-- BM25 lexical retrieval and current dense retrieval
-- Reciprocal Rank Fusion and metadata filtering
-- Dense vs sparse vs hybrid comparison
-- Hybrid retrieval evaluation against the dense baseline
+- cross-encoder reranker
+- candidate-set expansion
+- candidate rescoring
+- final top-k reduction
+- reranking abstraction
+- dense/hybrid baseline comparison
+- latency measurement
+- reranking tests
 
-## Phase 12 — Reranking
+Expected architecture:
 
-Planned:
+```text
+Query
+ │
+ ├── Dense
+ │
+ └── BM25
+      ↓
+     RRF
+      ↓
+Candidate Set
+      ↓
+Cross-Encoder
+      ↓
+Reranked Evidence
+```
 
-- Cross-encoder reranking
-- Candidate expansion, relevance rescoring, top-k reduction
-- Ranked vs unranked retrieval-quality comparison
+The Phase 11 configuration should initially remain frozen so reranking effects can be isolated.
+
+---
 
 ## Phase 13 — Evaluation
 
-Retrieval metrics:
+### Retrieval
 
-- Recall@K, Precision@K, Mean Reciprocal Rank (MRR), nDCG
+```text
+Recall@K
+Precision@K
+MRR
+nDCG
+```
 
-Answer-level evaluation:
+Compare dense, lexical, hybrid, hybrid + reranking, candidate depth, top-k, BM25 parameters, RRF parameters, embedding models, and chunking.
 
-- Faithfulness, answer relevance, context relevance, citation correctness
-- Citation identity validity **separately** from semantic support of claims
+### Answer Evaluation
 
-Context/pipeline diagnostics:
+Potential dimensions:
 
-- Retrieved and selected evidence counts; redundant/budget-skipped chunks
-- Estimated/actual prompt tokens and estimation error
-- Context truncation, retrieval latency, and generation latency
+- faithfulness
+- answer relevance
+- context relevance
+- completeness
+- abstention quality
 
-Evaluation should distinguish retrieval, context selection, generation, and citation failures rather than obscuring them behind a single RAG score.
+### Citation Evaluation
+
+Separate citation identity validity from semantic claim support.
+
+---
 
 ## Phase 14 — Research Features
 
-Potential features:
+Potential:
 
-- Paper summaries; methodology, findings, and limitations extraction
-- Cross-paper comparisons; evidence tables; research-gap analysis
-- Multi-document synthesis using existing evidence/citation paths
+- summaries
+- methodology extraction
+- findings
+- limitations
+- cross-paper comparisons
+- evidence tables
+- research-gap analysis
+- multi-document synthesis
+
+---
 
 ## Phase 15 — Observability
 
 Potential telemetry:
 
-- Query and retrieval configuration
-- Retrieved/selected chunks and scores
-- Reranking scores, context/token usage, runtime timings
-- Model configuration, final answer, citations, and insufficient-evidence state
-- Citation validation failure category (without unnecessarily logging private source text)
+- retrieval mode/config
+- retrieved and selected chunks
+- retrieval/reranking scores
+- token usage
+- latency
+- truncation
+- citation outcomes
+
+Private source text should not be unnecessarily logged.
+
+---
 
 ## Phase 16 — Containerisation
 
@@ -265,20 +381,60 @@ Potential services:
 ```text
 FastAPI
 Qdrant
-Local Model Runtime
+Ollama
 Frontend
 ```
 
-The current Qdrant local-mode adapter can later be configured for a standalone server; the Ollama API remains behind its provider interface.
+---
 
 ## Phase 17 — Demo / Deployment
 
-- Reproducible local startup and example (redistributable) corpus
-- Demonstration questions and cited answers
-- Inspectable source evidence and a portfolio-ready interface
+Potential:
 
-## Phase 18 — Benchmarking and Technical Report
+- reproducible local demo
+- setup automation
+- container orchestration
+- deployment docs
+- public-safe sample corpus
+- portfolio demo
 
-Compare configurations rather than relying on intuition. Potential dimensions include chunk size/overlap/strategy, embedding model, retrieval algorithm, top-k, thresholds, hybrid retrieval, reranking, context budget, deduplication, model settings, latency, memory, citation validity, and claim-level citation correctness.
+---
 
-The final project should demonstrate not only that RAG works, but why particular design choices were selected.
+## Phase 18 — Benchmarking / Technical Report
+
+Potential outputs:
+
+- retrieval benchmark
+- RAG evaluation report
+- latency/resource measurements
+- architecture diagrams
+- experiment tables
+- trade-offs
+- limitations
+- reproducibility instructions
+
+---
+
+# Current Position
+
+```text
+Phase 0   Foundation              ✅
+Phase 1   Ingestion               ✅
+Phase 2   Chunking                ✅
+Phase 3   Embeddings              ✅
+Phase 4   Vector Store            ✅
+Phase 5   Dense Retrieval         ✅
+Phase 6   Local LLM               ✅
+Phase 7   RAG                     ✅
+Phase 8   Citations               ✅
+Phase 9   API                     ✅
+Phase 10  Frontend                ✅
+Phase 11  Hybrid Retrieval        ✅
+Phase 12  Reranking               ← NEXT
+Phase 13  Evaluation
+Phase 14  Research Features
+Phase 15  Observability
+Phase 16  Containerisation
+Phase 17  Demo / Deployment
+Phase 18  Benchmark / Report
+```

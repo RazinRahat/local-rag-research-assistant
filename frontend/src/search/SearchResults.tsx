@@ -2,12 +2,67 @@ import type {
   RetrievalResult,
 } from "../api";
 
+import type {
+  RetrievalMode,
+} from "../api/models";
+
 interface SearchResultsProps {
   query: string | null;
   results: RetrievalResult[];
   isSearching: boolean;
   error: string | null;
   onDismissError: () => void;
+
+  /*
+   * Optional so existing component
+   * tests remain backward-compatible.
+   */
+  retrievalMode?: RetrievalMode;
+}
+
+function getModeLabel(
+  mode: RetrievalMode,
+): string {
+  switch (mode) {
+    case "dense":
+      return "Dense";
+
+    case "lexical":
+      return "Lexical";
+
+    case "hybrid":
+      return "Hybrid";
+  }
+}
+
+function getRankingDescription(
+  mode: RetrievalMode,
+): string {
+  switch (mode) {
+    case "dense":
+      return "Ranked by semantic similarity";
+
+    case "lexical":
+      return "Ranked by BM25 relevance";
+
+    case "hybrid":
+      return "Ranked by reciprocal rank fusion";
+  }
+}
+
+function getScoreTitle(
+  mode: RetrievalMode,
+): string {
+  switch (mode) {
+    case "dense":
+      return "Cosine similarity score";
+
+    case "lexical":
+      return "BM25 retrieval score";
+
+    case "hybrid":
+      return "Reciprocal rank fusion score";
+  }
 }
 
 export function SearchResults({
@@ -16,6 +71,7 @@ export function SearchResults({
   isSearching,
   error,
   onDismissError,
+  retrievalMode = "dense",
 }: SearchResultsProps) {
   if (isSearching) {
     return (
@@ -30,9 +86,12 @@ export function SearchResults({
         </h3>
 
         <p>
-          Embedding your query and
-          retrieving the most relevant
-          chunks.
+          Retrieving the most relevant
+          chunks using{" "}
+          {getModeLabel(
+            retrievalMode,
+          ).toLowerCase()}{" "}
+          retrieval.
         </p>
       </section>
     );
@@ -76,7 +135,7 @@ export function SearchResults({
         </h3>
 
         <p>
-          Ranked chunks, similarity
+          Ranked chunks, retrieval
           scores, source documents,
           and page provenance will
           remain inspectable.
@@ -104,14 +163,24 @@ export function SearchResults({
     );
   }
 
+  const ariaLabel =
+    retrievalMode === "dense"
+      ? "Semantic search results"
+      : `${getModeLabel(
+          retrievalMode,
+        )} search results`;
+
   return (
     <section
       className="search-results"
-      aria-label="Semantic search results"
+      aria-label={ariaLabel}
     >
       <div className="results-heading">
         <div>
           <p className="eyebrow">
+            {getModeLabel(
+              retrievalMode,
+            ).toUpperCase()}{" "}
             RETRIEVAL
           </p>
 
@@ -126,9 +195,11 @@ export function SearchResults({
             Results for “{query}”
           </p>
         </div>
+
         <span>
-          Ranked by semantic
-          similarity
+          {getRankingDescription(
+            retrievalMode,
+          )}
         </span>
       </div>
 
@@ -140,6 +211,9 @@ export function SearchResults({
                 result.chunk.chunk_id
               }
               result={result}
+              retrievalMode={
+                retrievalMode
+              }
             />
           ),
         )}
@@ -150,10 +224,12 @@ export function SearchResults({
 
 interface SearchResultCardProps {
   result: RetrievalResult;
+  retrievalMode: RetrievalMode;
 }
 
 function SearchResultCard({
   result,
+  retrievalMode,
 }: SearchResultCardProps) {
   const score =
     result.score.toFixed(3);
@@ -186,7 +262,11 @@ function SearchResultCard({
 
         <div
           className="result-score"
-          title="Cosine similarity score"
+          title={
+            getScoreTitle(
+              retrievalMode,
+            )
+          }
         >
           <span>
             Score

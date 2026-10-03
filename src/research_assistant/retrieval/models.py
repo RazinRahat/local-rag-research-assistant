@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from research_assistant.chunking.models import (
@@ -5,8 +7,16 @@ from research_assistant.chunking.models import (
 )
 
 
+class RetrievalMode(StrEnum):
+    """Available retrieval strategies."""
+
+    DENSE = "dense"
+    LEXICAL = "lexical"
+    HYBRID = "hybrid"
+
+
 class RetrievalConfig(BaseModel):
-    """Configuration for semantic retrieval."""
+    """Configuration for evidence retrieval."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -19,9 +29,11 @@ class RetrievalConfig(BaseModel):
 
     document_id: str | None = None
 
+    mode: RetrievalMode = RetrievalMode.DENSE
+
 
 class RetrievalResult(BaseModel):
-    """Ranked evidence returned by semantic retrieval."""
+    """Ranked evidence returned by retrieval."""
 
     model_config = ConfigDict(frozen=True)
 

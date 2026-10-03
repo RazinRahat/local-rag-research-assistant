@@ -296,4 +296,78 @@ describe("useSearch", () => {
       "second query",
     );
   });
+
+  it("forwards hybrid retrieval mode", async () => {
+    let receivedMode:
+      string | undefined;
+
+    const client =
+      makeClient(
+        async (request) => {
+          receivedMode =
+            request.mode;
+
+          return RESPONSE;
+        },
+      );
+
+    const { result } =
+      renderHook(() =>
+        useSearch(client),
+      );
+
+    await act(async () => {
+      await result.current.runSearch(
+        "attention",
+        null,
+        "hybrid",
+      );
+    });
+
+    expect(
+      receivedMode,
+    ).toBe(
+      "hybrid",
+    );
+  });
+
+  it("keeps dense retrieval implicit for backward compatibility", async () => {
+    let receivedRequest:
+      Parameters<
+        SearchClient["search"]
+      >[0] | null = null;
+
+    const client =
+      makeClient(
+        async (request) => {
+          receivedRequest =
+            request;
+
+          return RESPONSE;
+        },
+      );
+
+    const { result } =
+      renderHook(() =>
+        useSearch(client),
+      );
+
+    await act(async () => {
+      await result.current.runSearch(
+        "attention",
+        null,
+        "dense",
+      );
+    });
+
+    expect(
+      receivedRequest,
+    ).not.toBeNull();
+
+    expect(
+      receivedRequest,
+    ).not.toHaveProperty(
+      "mode",
+    );
+  });
 });

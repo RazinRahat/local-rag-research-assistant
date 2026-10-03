@@ -318,4 +318,76 @@ describe("useResearchQuery", () => {
       "second question",
     );
   });
+
+  it("forwards lexical retrieval mode", async () => {
+    let receivedMode:
+      string | undefined;
+
+    const client =
+      makeClient(
+        async (request) => {
+          receivedMode =
+            request.mode;
+
+          return RESPONSE;
+        },
+      );
+
+    const { result } =
+      renderHook(() =>
+        useResearchQuery(
+          client,
+        ),
+      );
+
+    await act(async () => {
+      await result.current.runQuery(
+        "Which optimizer was used?",
+        null,
+        "lexical",
+      );
+    });
+
+    expect(
+      receivedMode,
+    ).toBe(
+      "lexical",
+    );
+  });
+
+  it("forwards hybrid retrieval mode", async () => {
+    let receivedMode:
+      string | undefined;
+
+    const client =
+      makeClient(
+        async (request) => {
+          receivedMode =
+            request.mode;
+
+          return RESPONSE;
+        },
+      );
+
+    const { result } =
+      renderHook(() =>
+        useResearchQuery(
+          client,
+        ),
+      );
+
+    await act(async () => {
+      await result.current.runQuery(
+        "Explain the attention mechanism.",
+        null,
+        "hybrid",
+      );
+    });
+
+    expect(
+      receivedMode,
+    ).toBe(
+      "hybrid",
+    );
+  });
 });

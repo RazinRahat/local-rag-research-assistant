@@ -35,7 +35,7 @@ export function EvidenceInspector({
 
         <div className="evidence-score">
           <span>
-            Similarity
+            Retrieval score
           </span>
 
           <strong>

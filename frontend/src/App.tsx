@@ -5,6 +5,10 @@ import {
 
 import "./App.css";
 
+import type {
+  RetrievalMode,
+} from "./api/models";
+
 import {
   DocumentSidebar,
   type DocumentClient,
@@ -92,6 +96,18 @@ function App({
     "ask",
   );
 
+  /*
+   * Dense remains the default so the
+   * Phase 10 user experience and API
+   * behaviour remain unchanged.
+   */
+  const [
+    retrievalMode,
+    setRetrievalMode,
+  ] = useState<RetrievalMode>(
+    "dense",
+  );
+
   const [
     query,
     setQuery,
@@ -151,6 +167,14 @@ function App({
   }
 
   function clearResearchResults(): void {
+    /*
+     * Both hooks increment their
+     * request sequence here.
+     *
+     * That means changing scope or
+     * retrieval strategy also
+     * invalidates in-flight requests.
+     */
     clearSearch();
     clearQuery();
   }
@@ -162,6 +186,27 @@ function App({
       documentId,
     );
 
+    clearResearchResults();
+  }
+
+  function handleRetrievalModeChange(
+    nextMode: RetrievalMode,
+  ): void {
+    if (
+      nextMode === retrievalMode
+    ) {
+      return;
+    }
+
+    setRetrievalMode(
+      nextMode,
+    );
+
+    /*
+     * An old dense result must never
+     * remain visible after the UI says
+     * "Hybrid", and vice versa.
+     */
     clearResearchResults();
   }
 
@@ -210,6 +255,7 @@ function App({
     await runSearch(
       query,
       activeDocumentId,
+      retrievalMode,
     );
   }
 
@@ -217,6 +263,7 @@ function App({
     await runQuery(
       query,
       activeDocumentId,
+      retrievalMode,
     );
   }
 
@@ -269,6 +316,32 @@ function App({
     }
 
     return undefined;
+  }
+
+  function getSearchLabel(): string {
+    switch (retrievalMode) {
+      case "dense":
+        return "Semantic search";
+
+      case "lexical":
+        return "Lexical search";
+
+      case "hybrid":
+        return "Hybrid search";
+    }
+  }
+
+  function getSearchPlaceholder(): string {
+    switch (retrievalMode) {
+      case "dense":
+        return "Search for concepts, methods, findings, or terminology...";
+
+      case "lexical":
+        return "Search for exact terminology, identifiers, acronyms, or phrases...";
+
+      case "hybrid":
+        return "Search using semantic and lexical evidence together...";
+    }
   }
 
   return (
@@ -341,42 +414,123 @@ function App({
 
           <section className="research-panel">
             <div className="panel-header">
-              <div className="mode-switcher">
-                <button
-                  className={`mode-button ${
-                    mode === "ask"
-                      ? "active"
-                      : ""
-                  }`}
-                  type="button"
-                  aria-pressed={
-                    mode === "ask"
-                  }
-                  onClick={() =>
-                    setMode("ask")
-                  }
+              <div className="panel-controls">
+                <div
+                  className="mode-switcher"
+                  role="group"
+                  aria-label="Research action"
                 >
-                  Ask
-                </button>
+                  <button
+                    className={`mode-button ${
+                      mode === "ask"
+                        ? "active"
+                        : ""
+                    }`}
+                    type="button"
+                    aria-pressed={
+                      mode === "ask"
+                    }
+                    onClick={() =>
+                      setMode("ask")
+                    }
+                  >
+                    Ask
+                  </button>
 
-                <button
-                  className={`mode-button ${
-                    mode === "search"
-                      ? "active"
-                      : ""
-                  }`}
-                  type="button"
-                  aria-pressed={
-                    mode === "search"
-                  }
-                  onClick={() =>
-                    setMode(
-                      "search",
-                    )
-                  }
-                >
-                  Search
-                </button>
+                  <button
+                    className={`mode-button ${
+                      mode === "search"
+                        ? "active"
+                        : ""
+                    }`}
+                    type="button"
+                    aria-pressed={
+                      mode === "search"
+                    }
+                    onClick={() =>
+                      setMode(
+                        "search",
+                      )
+                    }
+                  >
+                    Search
+                  </button>
+                </div>
+
+                <div className="retrieval-strategy">
+                  <span className="retrieval-strategy-label">
+                    Retrieval
+                  </span>
+
+                  <div
+                    className="mode-switcher"
+                    role="group"
+                    aria-label="Retrieval strategy"
+                  >
+                    <button
+                      className={`mode-button ${
+                        retrievalMode ===
+                        "dense"
+                          ? "active"
+                          : ""
+                      }`}
+                      type="button"
+                      aria-pressed={
+                        retrievalMode ===
+                        "dense"
+                      }
+                      onClick={() =>
+                        handleRetrievalModeChange(
+                          "dense",
+                        )
+                      }
+                    >
+                      Dense
+                    </button>
+
+                    <button
+                      className={`mode-button ${
+                        retrievalMode ===
+                        "lexical"
+                          ? "active"
+                          : ""
+                      }`}
+                      type="button"
+                      aria-pressed={
+                        retrievalMode ===
+                        "lexical"
+                      }
+                      onClick={() =>
+                        handleRetrievalModeChange(
+                          "lexical",
+                        )
+                      }
+                    >
+                      Lexical
+                    </button>
+
+                    <button
+                      className={`mode-button ${
+                        retrievalMode ===
+                        "hybrid"
+                          ? "active"
+                          : ""
+                      }`}
+                      type="button"
+                      aria-pressed={
+                        retrievalMode ===
+                        "hybrid"
+                      }
+                      onClick={() =>
+                        handleRetrievalModeChange(
+                          "hybrid",
+                        )
+                      }
+                    >
+                      Hybrid
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="corpus-scope">
@@ -402,7 +556,7 @@ function App({
             >
               {mode === "ask"
                 ? "Research question"
-                : "Semantic search"}
+                : getSearchLabel()}
             </label>
 
             <textarea
@@ -411,7 +565,7 @@ function App({
               placeholder={
                 mode === "ask"
                   ? "Ask a question about your indexed research..."
-                  : "Search for concepts, methods, findings, or terminology..."
+                  : getSearchPlaceholder()
               }
               rows={5}
               value={query}
@@ -482,6 +636,9 @@ function App({
               }
               error={
                 searchError
+              }
+              retrievalMode={
+                retrievalMode
               }
               onDismissError={
                 clearSearchError

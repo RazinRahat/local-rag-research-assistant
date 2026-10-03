@@ -787,3 +787,42 @@ button:disabled {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Phase 11 — retrieval strategy controls */
+
+.panel-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.retrieval-strategy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.retrieval-strategy-label {
+  color: var(--text-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+  .panel-header {
+    flex-direction: column;
+  }
+
+  .retrieval-strategy {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .corpus-scope {
+    padding-top: 0;
+  }
+}

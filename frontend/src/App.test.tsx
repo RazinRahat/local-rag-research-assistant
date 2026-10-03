@@ -693,4 +693,82 @@ describe("App", () => {
 
     confirm.mockRestore();
   });
+
+  it("performs hybrid search when hybrid retrieval is selected", async () => {
+    const user =
+      userEvent.setup();
+
+    const searchMock =
+      vi.fn<
+        SearchClient["search"]
+      >();
+
+    searchMock.mockResolvedValue(
+      makeSearchResponse(),
+    );
+
+    render(
+      <App
+        documentClient={
+          makeDocumentClient()
+        }
+        searchClient={{
+          search: searchMock,
+        }}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole(
+        "button",
+        {
+          name: "Search",
+        },
+      ),
+    );
+
+    await user.click(
+      screen.getByRole(
+        "button",
+        {
+          name: "Hybrid",
+        },
+      ),
+    );
+
+    const input =
+      screen.getByRole(
+        "textbox",
+        {
+          name:
+            "Hybrid search",
+        },
+      );
+
+    await user.type(
+      input,
+      "attention mechanisms",
+    );
+
+    await user.click(
+      screen.getByRole(
+        "button",
+        {
+          name:
+            "Search evidence",
+        },
+      ),
+    );
+
+    await waitFor(() => {
+      expect(
+        searchMock,
+      ).toHaveBeenCalledWith({
+        query:
+          "attention mechanisms",
+        top_k: 5,
+        mode: "hybrid",
+      });
+    });
+  });
 });

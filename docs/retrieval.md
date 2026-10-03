@@ -1,323 +1,237 @@
-# Semantic Retrieval
+# Retrieval
 
 ## Purpose
 
-The retrieval layer converts a natural-language question into ranked evidence from the indexed research corpus.
+The retrieval layer converts natural-language queries into ranked source evidence.
 
-Before this stage, the system could:
+The system currently supports:
 
 ```text
-PDF
- ↓
-Parse
- ↓
-Chunk
- ↓
-Embed
- ↓
-Persist
+dense
+lexical
+hybrid
 ```
 
-but it could not yet search those stored representations in a reusable application-level way.
+Each strategy returns the same typed `RetrievalResult` and preserves original document provenance.
 
-Phase 5 adds:
+---
+
+## Common Retrieval Contract
+
+```text
+query
++
+RetrievalConfig
+ ↓
+Retriever
+ ↓
+RetrievalResult[]
+```
+
+`RetrievalResult` contains:
+
+```text
+rank
+score
+DocumentChunk
+```
+
+This keeps downstream RAG and citation logic independent from retrieval strategy.
+
+---
+
+# Dense Retrieval
 
 ```text
 Natural-Language Query
         ↓
-Query Embedding
-        ↓
-Vector Search
-        ↓
-Top-K Matches
-        ↓
-RetrievalResult[]
-```
-
-This is the first point where the system functions as a semantic research search engine rather than only an indexing pipeline.
-
----
-
-## Retrieval Architecture
-
-The retrieval path is deliberately split across three responsibilities.
-
-```text
-SemanticRetriever
-       │
-       │ natural-language query
-       ▼
 EmbeddingProvider
-       │
-       │ query vector
-       ▼
+        ↓
+BGE Query Embedding
+        ↓
 VectorStore
-       │
-       │ nearest stored vectors
-       ▼
-VectorSearchResult[]
-       │
-       ▼
-SemanticRetriever
-       │
-       ▼
+        ↓
+Qdrant Cosine Search
+        ↓
 RetrievalResult[]
 ```
 
-Each layer has a distinct role.
-
-### Embedding Provider
-
-Responsible for converting the query into the same semantic vector space used for document chunks.
-
-```text
-"What datasets were used?"
-        ↓
-BGE query embedding
-        ↓
-384-dimensional vector
-```
-
-### Vector Store
-
-Responsible for nearest-neighbour search over persisted vectors.
-
-The vector-store interface does not know how a query was generated.
-
-It only receives:
-
-```text
-query vector
-top-k
-optional threshold
-optional document filter
-```
-
-### Semantic Retriever
-
-Coordinates query embedding and vector search and converts the storage results into ranked retrieval-domain objects.
-
----
-
-## Why Retrieval Is a Separate Layer
-
-The project does not call Qdrant directly from FastAPI or future generation code.
-
-Instead:
-
-```text
-future API / RAG service
-        ↓
-SemanticRetriever
-        ↓
-VectorStore
-        ↓
-Qdrant
-```
-
-This avoids leaking database-specific APIs into the rest of the application.
-
-It also means future changes such as:
-
-* another vector database
-* hybrid search
-* reranking
-* query rewriting
-* metadata-aware retrieval
-
-can be introduced without redesigning the entire application.
-
----
-
-## Query Embeddings
-
-Queries are embedded using the same embedding provider used for document vectors.
-
-The baseline model is:
+Current embedding model:
 
 ```text
 BAAI/bge-small-en-v1.5
 ```
 
-Document passages and queries are handled through separate provider methods:
+Embedding dimension:
 
 ```text
-embed_documents()
-embed_query()
+384
 ```
 
-This leaves room for retrieval models that apply different instructions or encoding behaviour to queries and passages.
+Dense retrieval is useful for conceptual similarity, paraphrases, and semantically related wording.
 
-The current query vector is normalised before search.
+Dense remains the default strategy.
 
 ---
 
-## Semantic Similarity
+## Dense Scores
 
-The Qdrant collection uses cosine distance.
+Dense retrieval returns cosine similarity.
 
-Because the BGE embeddings are normalised:
+The project does not define one global default similarity threshold.
 
-```text
-||query|| ≈ 1
-||document|| ≈ 1
-```
-
-semantic similarity is closely related to the dot product used during the earlier NumPy smoke tests.
-
-Conceptually:
-
-```text
-query vector
-      │
-      ├── Chunk A → high similarity
-      ├── Chunk B → medium similarity
-      └── Chunk C → low similarity
-```
-
-Higher-ranking chunks should represent text that is semantically closer to the query.
+Threshold usefulness depends on the embedding model, corpus, query distribution, chunking strategy, and retrieval objective.
 
 ---
 
-## Top-K Retrieval
-
-The retriever supports configurable `top_k`.
-
-Example:
+# Lexical Retrieval
 
 ```text
-Corpus size: 4,000 chunks
-top_k: 5
+Natural-Language Query
+        ↓
+Lexical Tokenisation
+        ↓
+BM25
+        ↓
+Persisted Chunk Corpus
+        ↓
+RetrievalResult[]
 ```
 
-The retrieval layer returns only the five highest-ranked matches.
-
-Conceptually:
+Current baseline:
 
 ```text
-1. Chunk 843   score 0.82
-2. Chunk 104   score 0.79
-3. Chunk 991   score 0.75
-4. Chunk 622   score 0.71
-5. Chunk 301   score 0.68
+k1 = 1.5
+b = 0.75
 ```
 
-`top_k` is intentionally configurable because it creates a trade-off.
+The implementation uses a lightweight Unicode-aware tokenizer with case normalisation.
 
-Too low:
-
-```text
-relevant evidence may be missed
-```
-
-Too high:
-
-```text
-weak or irrelevant evidence may be introduced
-```
-
-The current default is a baseline rather than an experimentally established optimum.
+The current baseline does not yet introduce stemming, learned sparse vectors, query expansion, or phrase retrieval.
 
 ---
 
-## Retrieval Result Model
+## Why Lexical Retrieval
 
-The retrieval domain returns typed results.
+Dense retrieval may be weaker when retrieval depends strongly on exact lexical identity.
 
-Conceptually:
-
-```text
-RetrievalResult
-├── rank
-├── score
-└── chunk
-    ├── chunk_id
-    ├── document_id
-    ├── file_name
-    ├── page_number
-    ├── text
-    └── chunk metadata
-```
-
-The result therefore contains both:
+Examples include:
 
 ```text
-semantic relevance
+dataset names
+model names
+acronyms
+algorithm names
+equations
+rare identifiers
+technical phrases
 ```
 
-and:
-
-```text
-source provenance
-```
-
-This is critical for later grounded generation and citation construction.
+BM25 provides a complementary retrieval signal for these cases.
 
 ---
 
-## Provenance Reconstruction
+# Shared Qdrant Corpus
 
-Stored Qdrant points contain payload metadata.
-
-During retrieval, the Qdrant adapter reconstructs the original `DocumentChunk`.
-
-The provenance chain is therefore:
+Lexical retrieval uses the same persisted chunks already stored in Qdrant.
 
 ```text
-Qdrant match
-     ↓
-payload
-     ↓
-DocumentChunk
-     ↓
-page number
-     ↓
-source document
+QdrantVectorStore
+├── VectorStore
+│   └── dense vector persistence/search
+├── DocumentRegistry
+│   └── document listing/count/deletion
+└── ChunkCorpus
+    └── lexical chunk enumeration
 ```
 
-Later, a generated answer can cite evidence such as:
-
-```text
-paper.pdf, p. 7
-```
-
-without having to guess where a retrieved passage came from.
+`ChunkCorpus` remains separate from the core vector-store protocol.
 
 ---
 
-## Storage Boundary Validation
+# Reciprocal Rank Fusion
 
-Qdrant payloads are treated as external persistence data rather than trusted domain objects.
+Dense cosine similarity and BM25 relevance scores use different numerical scales.
 
-The adapter explicitly validates required payload fields before constructing a `DocumentChunk`.
-
-This prevents storage-specific data from silently bypassing application invariants.
-
-Conceptually:
+Hybrid retrieval therefore uses rank rather than raw score magnitude.
 
 ```text
-Qdrant payload
-      ↓
-validate fields
-      ↓
-DocumentChunk
+RRF(d) = Σ 1 / (k + rank_i(d))
 ```
 
-rather than:
+Current baseline:
 
 ```text
-arbitrary payload
-      ↓
-application
+k = 60
 ```
 
 ---
 
-## Document-Scoped Retrieval
+# Hybrid Retrieval
 
-The retrieval layer supports optional filtering by `document_id`.
+```text
+                 Query
+                   │
+        ┌──────────┴──────────┐
+        ▼                     ▼
+ Dense Retriever        BM25 Retriever
+        │                     │
+        ▼                     ▼
+ Dense Ranking          Lexical Ranking
+        │                     │
+        └──────────┬──────────┘
+                   ▼
+                  RRF
+                   │
+                   ▼
+          RetrievalResult[]
+```
 
-Global search:
+The hybrid retriever depends only on the `Retriever` protocol.
+
+---
+
+## Candidate Expansion
+
+Current baseline:
+
+```text
+candidate_multiplier = 2
+```
+
+With:
+
+```text
+top_k = 5
+```
+
+the hybrid retriever requests up to 10 dense and 10 lexical candidates before final fusion.
+
+The multiplier is not claimed to be optimal.
+
+---
+
+# Retrieval Routing
+
+Available modes:
+
+```text
+dense
+lexical
+hybrid
+```
+
+`RetrievalRouter` chooses the configured strategy.
+
+Dense remains the default for backward compatibility.
+
+The same router is used by both `ResearchService` and `RAGService`.
+
+---
+
+# Document-Scoped Retrieval
+
+Global retrieval:
 
 ```text
 query
@@ -325,261 +239,149 @@ query
 all indexed documents
 ```
 
-Document-scoped search:
+Document-scoped retrieval:
 
 ```text
 query
  ↓
-document_id filter
+document_id
  ↓
-one research paper
+one indexed document
 ```
 
-This will later support workflows such as:
+---
+
+# Score Semantics
 
 ```text
-Search all papers
+dense
+→ cosine similarity
+
+lexical
+→ BM25 relevance
+
+hybrid
+→ RRF score
 ```
 
-versus:
-
-```text
-Ask only about this paper
-```
-
-without creating a separate vector collection for every document.
+Those scores must not be compared numerically across modes.
 
 ---
 
 ## Score Thresholds
 
-The vector-store search interface supports an optional similarity threshold.
-
-Conceptually:
+`score_threshold` is supported only for dense retrieval.
 
 ```text
-Top result     0.83
-Second         0.76
-Third          0.62
-Fourth         0.41
+dense cosine threshold
+≠
+BM25 threshold
+≠
+RRF threshold
 ```
-
-A threshold could remove weaker results.
-
-However, the system currently does not define a default threshold.
-
-A value such as:
-
-```text
-0.5
-```
-
-cannot automatically be treated as universally meaningful.
-
-Useful thresholds depend on factors such as:
-
-* embedding model
-* query distribution
-* corpus
-* chunking strategy
-* retrieval objective
-
-Threshold selection should therefore be evaluated empirically rather than chosen by intuition.
 
 ---
 
-## Test Strategy
+# Phase 11 Comparison
 
-The retrieval layer is tested at two levels.
-
-### Vector-Store Search Tests
-
-In-memory Qdrant is populated with deliberately simple vectors such as:
+A six-query smoke comparison was run using:
 
 ```text
-(1, 0, 0)
-(0, 1, 0)
-(0, 0, 1)
+top_k = 5
+scope = all indexed documents
+
+dense
+lexical
+hybrid
 ```
 
-A query such as:
+Average top-five Jaccard overlap:
 
 ```text
-(1, 0, 0)
+Dense ↔ Lexical    ≈ 0.214
+Dense ↔ Hybrid     ≈ 0.478
+Lexical ↔ Hybrid   ≈ 0.507
 ```
 
-should rank the first vector highest.
-
-This tests actual Qdrant search behaviour without involving a language model.
-
-### Retriever Unit Tests
-
-The semantic retriever uses fake implementations of:
-
-```text
-EmbeddingProvider
-VectorStore
-```
-
-This verifies:
-
-* query validation
-* top-k handling
-* result ranking
-* domain-model conversion
-
-without loading BGE or Qdrant.
-
-This separation keeps normal tests fast and deterministic.
+The result demonstrates that dense and lexical retrieval provide materially different candidate signals.
 
 ---
 
-## Real-Model Smoke Testing
+## Exact-Term Example
 
-The retrieval pipeline is also tested with:
-
-```text
-BGE query embedding
-+
-persistent Qdrant vectors
-+
-real research-paper chunks
-```
-
-Example questions include:
+For:
 
 ```text
-How does multi-head attention work?
-
-Why can Transformers process sequence positions in parallel?
-
-What positional encoding is used?
-
-What datasets were used to evaluate the model?
+Adam optimizer
 ```
 
-The returned passages are manually inspected for semantic relevance.
+dense retrieval ranked a bibliography passage first.
 
-This confirms end-to-end behaviour but is not yet treated as formal retrieval evaluation.
+The actual optimizer-method passage appeared second.
+
+BM25 and hybrid retrieval promoted the method passage to rank one.
 
 ---
 
-## Comparison With Manual Similarity Search
+## Semantic Example
 
-During the embedding phase, semantic similarity was calculated directly in NumPy:
-
-```text
-query_vector · chunk_vector
-```
-
-Phase 5 moves that search into Qdrant.
-
-Comparing both approaches provides a useful sanity check:
+For:
 
 ```text
-same query
-+
-same embeddings
-+
-same similarity geometry
+Why can the model process sequence positions in parallel?
 ```
 
-should produce broadly consistent top results.
+dense retrieval returned the Transformer discussion explaining the sequential limitation of recurrence and the greater parallelisation enabled by attention.
 
-This helps verify that persistence and database querying have not changed the expected semantic behaviour.
+This demonstrates why semantic retrieval remains important.
 
 ---
 
-## Dense Retrieval vs Keyword Retrieval
+# Current Limitations
 
-The current system implements dense semantic retrieval.
+The retrieval system does not yet include:
 
-Dense retrieval is useful because it can match semantically related text even when exact terminology differs.
+- cross-encoder reranking
+- learned sparse retrieval
+- phrase-aware lexical retrieval
+- stemming
+- query rewriting
+- query expansion
+- HyDE
+- parent-child retrieval
+- metadata filtering beyond document identity
+- diversity-aware retrieval
+- empirically tuned BM25 parameters
+- empirically tuned RRF parameters
+- labelled retrieval evaluation
 
-For example:
-
-```text
-Query:
-"Why are recurrent neural networks unnecessary?"
-
-Document:
-"The model dispenses entirely with recurrence..."
-```
-
-A semantic embedding model can recognise the relationship even when literal word overlap is limited.
-
-However, dense retrieval can be weaker for:
-
-* exact identifiers
-* unusual acronyms
-* model names
-* equations
-* rare terminology
-* exact lexical matches
-
-This is one reason hybrid retrieval is planned later.
+The BM25 baseline can also score chunks containing only some terms from a multi-term query.
 
 ---
 
-## Current Limitations
+# Testing Strategy
 
-The current retrieval system does not yet include:
+Tests cover:
 
-* BM25
-* sparse vectors
-* hybrid retrieval
-* reciprocal-rank fusion
-* reranking
-* query expansion
-* query rewriting
-* HyDE
-* parent-child retrieval
-* metadata filters beyond document identity
-* empirically tuned score thresholds
-* labelled retrieval evaluation
-* diversification of highly similar chunks
-
-These limitations are intentional.
-
-The dense retriever serves as a clear baseline that future retrieval strategies can be compared against.
+- dense query validation
+- dense top-k handling
+- document filtering
+- BM25 lexical ranking
+- lexical tokenisation
+- empty corpus handling
+- RRF mathematics
+- deterministic fusion
+- duplicate detection
+- hybrid candidate expansion
+- router strategy selection
+- Qdrant chunk-corpus enumeration
+- API retrieval-mode propagation
 
 ---
 
-## Future Retrieval Architecture
+# Evaluation Direction
 
-The planned retrieval stack will evolve toward:
-
-```text
-                        Query
-                          │
-             ┌────────────┴────────────┐
-             ▼                         ▼
-       Dense Retrieval             BM25 Search
-             │                         │
-             └────────────┬────────────┘
-                          ▼
-               Reciprocal Rank Fusion
-                          │
-                          ▼
-                   Candidate Set
-                          │
-                          ▼
-                   Cross-Encoder
-                     Reranking
-                          │
-                          ▼
-                   Top Evidence
-```
-
-The current semantic retriever forms the dense branch of that future architecture.
-
----
-
-## Evaluation Direction
-
-Formal retrieval evaluation will be introduced later using labelled question-to-evidence relationships.
-
-Planned metrics include:
+Formal labelled retrieval evaluation will use:
 
 ```text
 Recall@K
@@ -588,38 +390,33 @@ MRR
 nDCG
 ```
 
-This will allow decisions about:
+Future comparisons will include:
 
-* chunk size
-* overlap
-* embedding model
-* top-k
-* score threshold
-* hybrid retrieval
-* reranking
-
-to be based on measured retrieval performance.
+```text
+Dense
+Lexical
+Hybrid
+Hybrid + Reranking
+```
 
 ---
 
-## Next Step
+# Next Step
 
-The next major stage introduces local language generation.
-
-The architecture will then become:
+Phase 12 introduces reranking.
 
 ```text
-Question
-   ↓
-Semantic Retrieval
-   ↓
-Retrieved Evidence
-   ↓
-Context Construction
-   ↓
-Local LLM
-   ↓
-Generated Answer
+Dense Retrieval
+       +
+BM25 Retrieval
+       ↓
+      RRF
+       ↓
+Candidate Set
+       ↓
+Cross-Encoder
+       ↓
+Reranked Evidence
 ```
 
-This will be the transition from standalone retrieval into a complete Retrieval-Augmented Generation pipeline.
+The Phase 11 baseline should remain frozen during the first reranking experiments.

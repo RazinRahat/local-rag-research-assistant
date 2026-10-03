@@ -2,134 +2,97 @@
 
 ## Purpose
 
-The Local RAG Research Assistant is designed as a modular, local-first Retrieval-Augmented Generation system for working with research documents.
+The Local RAG Research Assistant is designed as a modular, local-first Retrieval-Augmented Generation system for research documents.
 
-Rather than treating RAG as a single black-box operation, the application separates document ingestion, chunking, embeddings, persistence, retrieval, context construction, generation, citations, and evaluation into independently testable components.
-
-The intended full architecture is:
-
-```text
-                           User
-                            │
-                            ▼
-                     Application UI
-                            │
-                            ▼
-                         FastAPI
-                            │
-       ┌────────────────────┼─────────────────────┐
-       │                    │                     │
-       ▼                    ▼                     ▼
-   Ingestion            Retrieval             Evaluation
-       │                    │                     │
-       ▼                    ▼                     ▼
- PDF Parsing          Query Embedding        Retrieval Metrics
-       │                    │               Answer Evaluation
- Normalisation             Search            Citation Checks
-       │                    │
-       ▼                    ▼
-   Chunking          ┌───────────────┐
-       │             │ Vector Store  │
-       ▼             └───────┬───────┘
-  Embeddings                 │
-       │                 Candidates
-       ▼                     │
- Vector Store                ▼
-                       Hybrid Retrieval
-                             │
-                             ▼
-                          Reranker
-                             │
-                             ▼
-                       Context Builder
-                             │
-                             ▼
-                          Local LLM
-                             │
-                             ▼
-                        RAG Response
-                             │
-                             ▼
-                    Citation Parser/Validator
-                             │
-                             ▼
-                    Cited Answer + Evidence
-```
-
-The project is implemented incrementally so each layer can be understood, tested, and validated before additional orchestration is introduced.
+Rather than treating RAG as one black-box operation, the application separates ingestion, chunking, embeddings, persistence, retrieval, context construction, generation, citations, API transport, frontend presentation, and evaluation into independently testable components.
 
 ---
 
-## Design Boundaries
+# High-Level Architecture
 
-The system deliberately separates its major responsibilities.
+```text
+                            User
+                             │
+                             ▼
+                      React Workspace
+                             │
+                             ▼
+                          FastAPI
+                             │
+                             ▼
+                      ResearchService
+                             │
+           ┌─────────────────┼─────────────────┐
+           │                 │                 │
+           ▼                 ▼                 ▼
+      Document Flow    RetrievalRouter    Citation Service
+           │                 │
+           ▼        ┌────────┼────────┐
+        Qdrant      ▼        ▼        ▼
+                  Dense   Lexical   Hybrid
+                    │        │        │
+                    │        │    Dense + BM25
+                    │        │        │
+                    │        │        ▼
+                    │        │       RRF
+                    └────────┴────────┘
+                             │
+                             ▼
+                       ContextBuilder
+                             │
+                             ▼
+                        Ollama/Qwen
+                             │
+                             ▼
+                         RAGResponse
+                             │
+                             ▼
+                      CitationService
+                             │
+                             ▼
+                     CitedRAGResponse
+```
 
-### Ingestion
+---
 
-The ingestion layer converts external research documents into the application's canonical representation.
+# Ingestion
 
 ```text
 PDF
  ↓
+PyMuPDF
+ ↓
 ParsedDocument
+ ↓
+DocumentPage[]
 ```
 
-The current implementation uses PyMuPDF for PDF parsing.
-
-The ingestion layer is responsible for:
-
-- validating supported documents
-- extracting page-level text
-- extracting PDF metadata
-- computing deterministic document identity
-- preserving page boundaries
-- normalising extracted text
-- detecting encrypted or non-text PDFs
-
-Later document formats should be able to enter through this boundary without changing retrieval or generation logic.
+Responsibilities include validation, page-level text extraction, metadata extraction, SHA-256 identity, encrypted-document detection, conservative normalisation, and page-boundary preservation.
 
 ---
 
-### Chunking
-
-The chunking layer converts parsed pages into retrieval-sized textual units.
+# Chunking
 
 ```text
-ParsedDocument
-      ↓
 DocumentPage[]
+      ↓
+Tokenizer
       ↓
 DocumentChunk[]
 ```
 
-The current baseline uses overlapping token windows aligned with the embedding model's tokenizer.
-
-Each chunk preserves:
-
-- document identity
-- filename
-- page number
-- global chunk position
-- page-local chunk position
-- token range
-- source text
-
-This maintains the provenance required for retrieval and citation generation.
-
-The current working baseline uses model-aware tokenisation with approximately:
+Current baseline:
 
 ```text
 384 content tokens
 64-token overlap
 ```
 
-These values are baselines rather than claimed optimal settings and will later be evaluated experimentally.
+Each chunk preserves document identity, filename, page number, chunk positions, token range, and source text.
 
 ---
 
-### Embeddings
-
-The embedding layer converts chunks and natural-language queries into dense vector representations.
+# Embeddings
 
 ```text
 DocumentChunk
@@ -139,31 +102,19 @@ EmbeddingProvider
 ChunkEmbedding
 ```
 
-The current implementation uses:
+Current implementation:
 
 ```text
+SentenceTransformerEmbedder
 BAAI/bge-small-en-v1.5
+384 dimensions
 ```
 
-through Sentence Transformers.
-
-The baseline produces:
-
-```text
-384-dimensional embeddings
-```
-
-Document passages and queries are represented through separate embedding-provider operations.
-
-The embedding provider is abstracted so models can later be compared or replaced without rewriting persistence, retrieval, or RAG orchestration.
-
-Document and query embeddings are normalised before similarity search.
+Vectors are normalised before dense retrieval.
 
 ---
 
-### Vector Storage
-
-The vector-store layer persists document embeddings and their source metadata.
+# Vector Storage
 
 ```text
 ChunkEmbedding[]
@@ -173,134 +124,131 @@ VectorStore
 Qdrant
 ```
 
-Each stored point contains:
+Stored points contain vector data, chunk text, provenance, and embedding metadata.
 
-```text
-vector
-+
-chunk text
-+
-document provenance
-+
-embedding metadata
-```
-
-The current implementation uses persistent local Qdrant storage.
-
-The vector-store boundary supports:
-
-- collection creation
-- collection compatibility validation
-- embedding-model compatibility checks
-- vector insertion
-- document replacement
-- document deletion
-- persistent storage
-- document filtering
-- vector similarity search
-
-The concrete Qdrant adapter also supports document enumeration for the Phase 9 application layer by aggregating stored chunk payloads into `StoredDocument` summaries. This remains separate from the core `VectorStore` retrieval protocol.
-
-The application does not expose Qdrant-specific result objects outside this layer.
-
-Stored chunk text means retrieved evidence can be reconstructed directly from the vector-store payload without re-opening the original PDF during every query.
+The core vector-store boundary supports collection creation, compatibility checks, replacement, deletion, search, counts, and lifecycle cleanup.
 
 ---
 
-### Retrieval
-
-The retrieval layer converts a natural-language question into ranked source evidence.
+# Retrieval Architecture
 
 ```text
-Question
-   ↓
-Query Embedding
-   ↓
-Vector Search
-   ↓
-Top-K Matches
-   ↓
+                            Query
+                              │
+                              ▼
+                      RetrievalRouter
+                              │
+           ┌──────────────────┼──────────────────┐
+           ▼                  ▼                  ▼
+        Dense              Lexical             Hybrid
+           │                  │                  │
+           ▼                  ▼          ┌───────┴───────┐
+SemanticRetriever       BM25Retriever     ▼               ▼
+           │                  │        Dense            BM25
+           ▼                  ▼           │               │
+EmbeddingProvider       ChunkCorpus        └───────┬───────┘
+           │                  │                   ▼
+           ▼                  ▼                  RRF
+      VectorStore           Qdrant                 │
+           │                                        ▼
+           ▼                                RetrievalResult[]
+         Qdrant
+```
+
+---
+
+## Dense Retrieval
+
+```text
+query
+ ↓
+BGE embedding
+ ↓
+Qdrant cosine search
+ ↓
 RetrievalResult[]
 ```
 
-The current baseline implements dense semantic retrieval using BGE query embeddings and Qdrant cosine search.
-
-Retrieval currently supports:
-
-- configurable top-k
-- similarity scores
-- optional score thresholds
-- document-scoped search
-- typed ranked results
-- reconstruction of source provenance
-
-The current implementation is intentionally a clear dense-retrieval baseline.
-
-The planned retrieval stack will later evolve toward:
-
-```text
-Dense Retrieval
-       +
-BM25 Retrieval
-       ↓
-Hybrid Fusion
-       ↓
-Reranking
-```
-
-Dense retrieval can therefore be measured against hybrid and reranked alternatives rather than being replaced without comparison.
+Dense remains the default.
 
 ---
 
-### Generation
-
-The generation layer provides language-model inference independently of retrieval.
+## Lexical Retrieval
 
 ```text
-ChatMessage[]
-      ↓
-LLMProvider
-      ↓
-OllamaProvider
-      ↓
-Ollama Runtime
-      ↓
-Local Qwen Model
-      ↓
-GenerationResult
+query
+ ↓
+lexical tokenisation
+ ↓
+BM25
+ ↓
+ChunkCorpus
+ ↓
+RetrievalResult[]
 ```
 
-The current implementation uses Ollama as the local runtime and Qwen3.5 as the development baseline.
+Current baseline:
 
-The generation boundary is responsible for:
-
-- model invocation
-- structured chat messages
-- inference configuration
-- response validation
-- output-token limits
-- model context configuration
-- token accounting
-- model-loading metrics
-- prompt-processing metrics
-- generation timing
-- runtime error translation
-
-The generation layer is deliberately not responsible for:
-
-- document retrieval
-- evidence selection
-- context construction
-- grounding logic
-- citation validation
-
-Those responsibilities belong to higher RAG layers.
+```text
+k1 = 1.5
+b = 0.75
+```
 
 ---
 
-### Context Construction
+## Hybrid Retrieval
 
-Context construction is implemented as an explicit boundary between retrieval and generation.
+```text
+Dense candidates
++
+Lexical candidates
+ ↓
+Reciprocal Rank Fusion
+ ↓
+RetrievalResult[]
+```
+
+Current baseline:
+
+```text
+RRF rank constant = 60
+candidate multiplier = 2
+```
+
+RRF is used because dense cosine and BM25 scores are not directly comparable.
+
+---
+
+# Qdrant Interface Roles
+
+```text
+QdrantVectorStore
+├── VectorStore
+├── DocumentRegistry
+└── ChunkCorpus
+```
+
+These responsibilities remain represented by separate protocols.
+
+---
+
+# Retrieval Routing
+
+`RetrievalConfig` contains the requested strategy:
+
+```text
+dense
+lexical
+hybrid
+```
+
+`RetrievalRouter` selects the corresponding implementation.
+
+The same router is passed to both `ResearchService` and `RAGService`.
+
+---
+
+# Context Construction
 
 ```text
 RetrievalResult[]
@@ -312,105 +260,47 @@ EvidenceBlock[]
 ChatMessage[]
 ```
 
-The context layer currently manages:
-
-- finite model-context budgets
-- reserved generation space
-- a token-estimation safety margin
-- retrieval-order preservation
-- duplicate chunk removal
-- highly overlapping evidence filtering
-- whole-chunk inclusion
-- source labels
-- explicit evidence delimiters
-- grounding instructions
-
-The available runtime context is treated as a finite budget:
-
-```text
-Total Runtime Context
-│
-├── system instructions
-├── user question
-├── retrieved evidence
-├── source metadata
-├── chat-template control tokens
-├── safety margin
-└── reserved generation space
-```
-
-Retrieved chunks are not concatenated without limits.
-
-Each candidate evidence block is added only if the resulting prompt remains within the available budget.
-
-The baseline prefers preserving complete chunks rather than arbitrarily cutting evidence midway.
+The context layer manages finite model context, reserved output budget, safety margin, evidence ordering, duplicate removal, overlap filtering, whole-chunk inclusion, source labels, delimiters, and grounding instructions.
 
 ---
 
-### Chat-Template Token Estimation
-
-Prompt budgeting must account for more than visible text.
-
-Chat models also receive formatting and control tokens associated with:
-
-```text
-system
-user
-assistant
-message boundaries
-generation prompt
-```
-
-The current implementation therefore estimates prompt length by:
+# Token Accounting
 
 ```text
 ChatMessage[]
       ↓
-apply model chat template
+chat template
       ↓
-formatted conversation
+formatted prompt
       ↓
-model tokenizer
+tokenizer
       ↓
-estimated prompt tokens
+estimated tokens
 ```
 
-The token counter renders the chat template first and then tokenises the rendered text.
-
-Conceptually:
-
-```text
-apply_chat_template(
-    tokenize=False,
-    add_generation_prompt=True
-)
-       ↓
-tokenizer.encode(
-    add_special_tokens=False,
-    truncation=False
-)
-```
-
-\`truncation=False\` is intentional because the application needs to detect an oversized prompt rather than silently truncate it.
-
-The RAG response also preserves Ollama's actual runtime prompt-token count.
-
-This gives two observable values:
-
-```text
-estimated_prompt_tokens
-actual_prompt_tokens
-```
-
-which can later be compared experimentally.
-
-A configurable safety margin protects against small differences between the Hugging Face token estimator and the Ollama runtime.
+The RAG response can also preserve runtime token counts returned by Ollama.
 
 ---
 
-### RAG Orchestration
+# Generation
 
-The RAG service coordinates retrieval, context construction, and generation.
+```text
+ChatMessage[]
+      ↓
+LLMProvider
+      ↓
+OllamaProvider
+      ↓
+Qwen
+      ↓
+GenerationResult
+```
+
+Generation remains independent from retrieval implementation.
+
+---
+
+# RAG Orchestration
 
 ```text
 Question
@@ -430,896 +320,177 @@ GenerationResult
 RAGResponse
 ```
 
-The orchestration layer does not directly depend on Qdrant or Ollama.
-
-Instead it depends on interfaces:
-
-```text
-Retriever
-LLMProvider
-ChatTokenCounter
-```
-
-This keeps orchestration independent from infrastructure choices.
-
 ---
 
-### Evidence Representation
-
-Evidence selected for generation is represented explicitly.
-
-Conceptually:
+# Evidence Representation
 
 ```text
 EvidenceBlock
 ├── source_id
 ├── retrieval_rank
-├── similarity_score
+├── score
 └── DocumentChunk
 ```
 
-Source IDs currently follow a local prompt representation such as:
+Score meaning depends on retrieval mode:
 
 ```text
-S1
-S2
-S3
+dense    → cosine similarity
+lexical  → BM25 score
+hybrid   → RRF score
 ```
-
-Evidence is rendered with explicit boundaries:
-
-```text
-<SOURCE id="S1" file="paper.pdf" page="3">
-Retrieved document text...
-</SOURCE>
-```
-
-These are temporary IDs scoped to the current prompt, not permanent document or vector-database IDs. Phase 8 now recognises model-produced `[S#]` tokens and validates them against the exact `EvidenceBlock` set supplied for that prompt. The application, not the model, provides source filenames, page numbers, and chunk identities.
 
 ---
 
-### Evidence Deduplication
-
-Overlapping token windows can result in retrieval candidates containing repeated information.
-
-The context builder therefore removes:
-
-- identical chunk IDs
-- highly overlapping chunks from the same document page
-
-The overlap threshold is deliberately conservative.
-
-Normal neighbouring chunks produced by the configured overlap should generally remain eligible.
-
-The objective is to remove strongly redundant evidence without discarding useful neighbouring context.
-
----
-
-### Retrieved Documents as Untrusted Data
-
-Retrieved document text is treated as evidence, not application instructions.
-
-A source document may contain text that resembles model instructions.
-
-For example:
+# Citation Integrity
 
 ```text
-Ignore all previous instructions...
+Generated Answer
+      ↓
+Citation Parser
+      ↓
+[S1], [S2], ...
+      ↓
+Citation Validator
+      ↓
+Known EvidenceBlock
+      ↓
+CitationSource
 ```
 
-Such content must remain inside the evidence boundary.
-
-The grounding prompt explicitly instructs the model to treat retrieved text as source material rather than instructions.
-
-This reduces one prompt-injection path but should not be described as complete adversarial-RAG protection.
+The application, not the model, owns document/page/chunk provenance.
 
 ---
 
-### Insufficient Evidence
-
-The RAG service explicitly handles the case where retrieval returns no usable evidence.
+# Insufficient Evidence
 
 ```text
 No Evidence
-     ↓
-Skip LLM Generation
-     ↓
+    ↓
+Skip LLM
+    ↓
 Insufficient-Evidence Response
 ```
 
-This avoids asking the model to answer entirely from prior knowledge when the retrieval layer has produced nothing.
-
-However, dense retrieval can still return mathematically nearest results for an unrelated question.
-
-Therefore:
-
-```text
-retrieval returned chunks
-```
-
-does not necessarily mean:
-
-```text
-the corpus contains sufficient evidence
-```
-
-Reliable weak-evidence detection will require calibrated retrieval evaluation.
-
-The project therefore does not currently impose an arbitrary global similarity threshold.
+Nearest-neighbour retrieval can still return weak candidates for unrelated questions, so weak-evidence detection remains an evaluation problem.
 
 ---
 
-### Grounding
-
-The generation prompt instructs the model to:
-
-- answer from the supplied evidence
-- avoid unsupported outside knowledge
-- state when the evidence is insufficient
-- avoid inventing references or page numbers
-- separate evidence from cautious interpretation
-- ignore instructions contained inside retrieved evidence
-
-These are grounding mechanisms.
-
-They do not guarantee that every generated statement is faithful.
-
-Formal faithfulness and citation evaluation remain later phases.
-
----
-
-### Citations
-
-The citation-integrity layer is implemented separately from `RAGService`. The LLM is instructed to reference provided evidence using the exact `[S1]`, `[S2]`, … syntax, with consecutive tokens such as `[S1][S2]` when more than one source is needed.
+# API Boundary
 
 ```text
-LLM output / RAGResponse.answer
-               ↓
-        CitationService
-               ↓
-     parse_citations() → CitationReference[]
-               ↓
-     validate_citations(answer, selected evidence)
-               ↓
-        CitationValidationResult
-       ├── references[]  (each inline occurrence and offset)
-       └── sources[]     (unique trusted EvidenceBlock mappings)
-               ↓
-         CitedRAGResponse
-```
-
-`CitationReference` preserves the source ID and character offsets (start inclusive, end exclusive). `CitationSource` maps a unique source ID to the actual `EvidenceBlock`. `CitedRAGResponse` wraps both the original `RAGResponse` and the citation-validation result.
-
-The validator rejects duplicate source IDs in supplied evidence, recognised references to unprovided IDs (`UnknownCitationError`), and evidence-backed answers with no recognised citations (`MissingCitationError`). An explicit insufficient-evidence response is allowed to have empty citation collections.
-
-The provenance chain is:
-
-```text
-Generated [S2]
-      ↓
-CitationReference
-      ↓
-CitationSource
-      ↓
-EvidenceBlock (selected for this generation)
-      ↓
-DocumentChunk
-      ├── file_name
-      ├── document_id
-      ├── page_number
-      └── chunk_id / text
-```
-
-**Scope of the guarantee:** recognised source IDs are checked for identity against supplied evidence. The parser currently ignores unsupported formatting variants rather than detecting all malformed citation-like text. It does not establish whether a cited passage entails the associated claim, nor require every factual sentence to have a citation. Those are future evaluation and hardening tasks. See [Citation Integrity](citations.md).
-
----
-
-### Evaluation
-
-Evaluation remains independent from generation.
-
-The project will measure retrieval separately from answer generation so failures can be diagnosed rather than grouped together as a generic RAG failure.
-
-For example:
-
-```text
-bad retrieved evidence
-        ↓
-retrieval failure
-```
-
-versus:
-
-```text
-good retrieved evidence
-+
-unsupported generated statement
-        ↓
-generation / grounding failure
-```
-
-Planned retrieval metrics include:
-
-- Recall@K
-- Precision@K
-- Mean Reciprocal Rank
-- nDCG
-
-Planned answer-level evaluation includes:
-
-- faithfulness
-- answer relevance
-- context relevance
-- citation correctness
-
-Context-construction measurements can additionally include:
-
-- retrieved evidence count
-- evidence actually used
-- redundant chunks removed
-- chunks skipped for budget
-- estimated prompt tokens
-- actual prompt tokens
-- context truncation state
-
----
-
-## Current Architecture
-
-As of Phase 9, the project implements a complete local dense-RAG baseline, independent citation-integrity validation, and a typed FastAPI application boundary exposing document indexing, semantic retrieval, and cited question answering.
-
-### Indexing Pipeline
-
-```text
-Research PDF
-      │
-      ▼
-   PyMuPDF
-      │
-      ▼
-ParsedDocument
-      │
-      ▼
-DocumentPage[]
-      │
-      ▼
-Model-Aware Tokenizer
-      │
-      ▼
-DocumentChunk[]
-      │
-      ▼
-Sentence Transformer
-      │
-      ▼
-ChunkEmbedding[]
-      │
-      ▼
-    Qdrant
-```
-
-This transforms research PDFs into persistent searchable semantic representations.
-
----
-
-### Retrieval Pipeline
-
-```text
-Natural-Language Query
-          │
-          ▼
-  EmbeddingProvider
-          │
-          ▼
-     Query Vector
-          │
-          ▼
-      VectorStore
-          │
-          ▼
-     Qdrant Search
-          │
-          ▼
-  RetrievalResult[]
-```
-
-This pipeline can operate independently as a local semantic research search system.
-
----
-
-### Generation Pipeline
-
-```text
-ChatMessage[]
-      │
-      ▼
-   LLMProvider
-      │
-      ▼
- OllamaProvider
-      │
-      ▼
- Ollama Runtime
-      │
-      ▼
- Local Qwen Model
-      │
-      ▼
-GenerationResult
-```
-
-This pipeline can operate independently from retrieval and exposes generation metrics for later observability.
-
----
-
-### End-to-End RAG Pipeline
-
-```text
-                         Question
-                            │
-                            ▼
-                        Retriever
-                            │
-                            ▼
-                   RetrievalResult[]
-                            │
-                            ▼
-                     ContextBuilder
-                            │
-             ┌──────────────┼──────────────┐
-             │              │              │
-             ▼              ▼              ▼
-        Token Budget   Deduplication   Source Labels
-             │              │              │
-             └──────────────┼──────────────┘
-                            ▼
-                      ChatMessage[]
-                            │
-                            ▼
-                       LLMProvider
-                            │
-                            ▼
-                    GenerationResult
-                            │
-                            ▼
-                       RAGResponse
-                            │
-                            ▼
-                      CitationService
-                            │
-                 ┌──────────┴──────────┐
-                 ▼                     ▼
-          CitationReference[]    CitationSource[]
-                 └──────────┬──────────┘
-                            ▼
-                      CitedRAGResponse
-```
-
-The system supports local evidence-grounded generation and, as a separate post-generation step, validation of recognised source IDs against the evidence selected for that prompt. Phase 9 exposes these capabilities through typed FastAPI contracts without moving retrieval, generation, or citation logic into the transport layer.
-
----
-
-## Application and HTTP Layer
-
-Phase 9 adds a typed application and HTTP boundary around the existing indexing and RAG pipelines.
-
-```text
-                           Client
-                              │
-                              ▼
-                           FastAPI
-                              │
-                ┌─────────────┼─────────────┐
-                │             │             │
-                ▼             ▼             ▼
-            Documents       Search         Query
-                │             │             │
-                └─────────────┼─────────────┘
-                              ▼
-                       ResearchService
-                              │
-             ┌────────────────┼────────────────┐
-             │                │                │
-             ▼                ▼                ▼
-      LocalPDFIndexer   SemanticRetriever   RAGService
-             │                │                │
-             ▼                ▼                ▼
-        Phases 1–4          Phase 5         Phases 6–8
-```
-
-The HTTP routes remain intentionally thin. They validate transport-level input, translate expected application failures into HTTP responses, and delegate domain work through the `ResearchAPI` boundary.
-
-`ResearchService` coordinates:
-
-- document indexing
-- document listing and deletion
-- semantic retrieval
-- RAG generation
-- citation validation
-- runtime cleanup
-
-It does not reimplement PDF parsing, chunking, embedding, retrieval, generation, or citation parsing.
-
-The document-indexing application path is:
-
-```text
-BinaryIO upload
-      ↓
-LocalPDFIndexer
-      ↓
-temporary PDF
-      ↓
-load_pdf()
-      ↓
-ParsedDocument
-      ↓
-chunk_document()
-      ↓
-DocumentChunk[]
-      ↓
-embed_chunks()
-      ↓
-ChunkEmbedding[]
-      ↓
-VectorStore.replace_document()
-      ↓
-StoredDocument
-```
-
-The Phase 1 ingestion layer remains responsible for content-derived SHA-256 document identity. The indexer preserves that identity through chunking, embeddings, and storage.
-
-Qdrant stores individual chunk points rather than a separate document table. Phase 9 therefore adds document enumeration through the concrete `QdrantVectorStore`, which scrolls chunk payloads and aggregates them into `StoredDocument` summaries. This capability is exposed through the Phase 9 `DocumentRegistry` boundary rather than expanding the Phase 5 `VectorStore` retrieval contract.
-
-Runtime composition is isolated in `api/runtime.py`. It creates and connects the concrete:
-
-```text
-HuggingFaceTokenizer
-SentenceTransformerEmbedder
-QdrantVectorStore
-SemanticRetriever
-OllamaProvider
-HuggingFaceChatTokenCounter
-ContextBuilder
-RAGService
-CitationService
-LocalPDFIndexer
+HTTP
+ ↓
+FastAPI
+ ↓
 ResearchService
+ ↓
+Domain Components
 ```
 
-The research service is constructed lazily. `GET /health` therefore remains lightweight and does not need to initialise the complete local AI stack.
-
-FastAPI lifespan handling closes shared Ollama and Qdrant resources during application shutdown.
-
-The current HTTP application is deliberately a local, single-process baseline. Authentication, multi-user isolation, distributed workers, background indexing, and public deployment hardening remain outside Phase 9.
-
----
-
-## Browser Application Layer
-
-Phase 10 adds a React + TypeScript browser application as a client of the Phase 9 API. The browser does not import backend domain modules or access local model/storage infrastructure directly.
+Routes:
 
 ```text
-                           Browser
-                              │
-                              ▼
-                         React / Vite
-                              │
-                              ▼
-                     ResearchAPIClient
-                              │
-                              ▼
-                     /api/* dev proxy
-                              │
-                              ▼
-                           FastAPI
-                              │
-                              ▼
-                       ResearchService
-                              │
-             ┌────────────────┼────────────────┐
-             │                │                │
-             ▼                ▼                ▼
-      LocalPDFIndexer   SemanticRetriever   RAGService
-                                               │
-                                               ▼
-                                        CitationService
-```
-
-The frontend preserves the transport boundary introduced in Phase 9. React components call a single typed API client rather than using ad hoc `fetch()` calls throughout the component tree. This concentrates HTTP paths, request serialisation, multipart upload handling, error translation, and future cross-cutting transport concerns in one place.
-
-### Frontend Responsibilities
-
-The browser application is responsible for:
-
-- presenting the indexed document library
-- uploading and deleting research PDFs through HTTP
-- selecting whole-corpus or document-specific scope
-- collecting semantic-search queries and RAG questions
-- displaying ranked retrieval results
-- displaying grounded answers and insufficient-evidence states
-- exposing validated citation identities as interactive controls
-- inspecting the exact evidence associated with a citation source
-- exposing selected provenance and generation diagnostics
-- managing loading, error, and empty states
-- preventing stale asynchronous responses from overwriting newer user state
-
-The browser is not responsible for:
-
-- PDF parsing
-- tokenisation or chunk creation
-- embedding inference
-- vector search implementation
-- context budgeting
-- model prompting
-- citation parsing or validation
-- reconstruction of document/page provenance from generated model text
-
-### Frontend State Boundaries
-
-Frontend state is intentionally divided by responsibility rather than centralised prematurely.
-
-```text
-useDocuments()
-   └─ indexed-document lifecycle
-
-useSearch()
-   └─ semantic-search execution and results
-
-useResearchQuery()
-   └─ cited-RAG execution and response
-
-App
-   └─ current mode, query text, and selected corpus scope
-```
-
-This keeps retrieval and generation failure modes distinct and avoids introducing a global state framework before the application requires one.
-
-### Citation Inspection Boundary
-
-Citation interaction uses the already validated source mapping returned by Phase 8.
-
-```text
-RAG answer text
-   │
-   ├─ CitationReference(start_index, end_index, source_id)
-   │
-   └─ CitationSource(source_id, EvidenceBlock)
-                         │
-                         ▼
-                 Evidence Inspector
-```
-
-The UI makes only recognised, validated citation references interactive. Selecting `[S1]` reveals the trusted `EvidenceBlock` already associated with `S1`; it does not perform a new retrieval query. This preserves the provenance of the exact generation request.
-
-Citation identity remains distinct from semantic entailment. Displaying a validated `S1` mapping means the source identifier resolves to evidence supplied to the model, not that the application has proven every surrounding claim is entailed by that evidence.
-
-### Unicode Citation Offsets
-
-Python string indexes are code-point based while JavaScript strings expose UTF-16 code units. The frontend therefore renders citation ranges over `Array.from(answer)` so validated character offsets remain aligned when non-BMP Unicode characters appear before a citation.
-
-### Request Concurrency
-
-Search and RAG hooks maintain a monotonically increasing request sequence. Clearing results, changing scope, or starting a newer request invalidates older in-flight responses.
-
-```text
-request A starts
-      ↓
-request B starts or scope changes
-      ↓
-A becomes stale
-      ↓
-A eventually resolves
-      ↓
-response ignored
-```
-
-This prevents a result generated for an old document scope from appearing under the current scope. The current implementation ignores stale responses rather than requiring transport-level cancellation.
-
-### Frontend Testing Boundary
-
-The frontend test suite separates responsibilities across:
-
-- API client tests
-- document hook/component tests
-- search hook/result tests
-- RAG hook/answer tests
-- citation rendering tests
-- evidence provenance tests
-- App-level integration tests
-
-Frontend tests verify preservation and presentation of backend research state. They do not claim that a similarity score is good, that a retrieved passage is scientifically relevant, that a generated answer is correct, or that a cited source semantically entails a claim. Those questions belong to the evaluation phases.
-
----
-
-## Provider Abstractions
-
-The project uses explicit interfaces around external infrastructure and model boundaries.
-
-### Embeddings
-
-```text
-EmbeddingProvider
-       │
-       └── SentenceTransformerEmbedder
-```
-
-Potential future implementations include:
-
-```text
-EmbeddingProvider
-├── SentenceTransformerEmbedder
-├── OllamaEmbeddingProvider
-└── RemoteEmbeddingProvider
+GET    /health
+POST   /documents
+GET    /documents
+DELETE /documents/{document_id}
+POST   /search
+POST   /query
 ```
 
 ---
 
-### Vector Storage
+# Frontend Boundary
 
 ```text
-VectorStore
-    │
-    └── QdrantVectorStore
+React
+ ↓
+ResearchAPIClient
+ ↓
+FastAPI
 ```
 
-This keeps retrieval independent from Qdrant-specific APIs.
+The browser does not access Qdrant, BGE, Ollama, or tokenizer internals directly.
 
 ---
 
-### Retrieval
+# Async Safety
+
+Search and RAG hooks track request sequences.
+
+Changing document scope or retrieval mode invalidates older requests so stale responses cannot overwrite current UI state.
+
+---
+
+# Local-First Design
 
 ```text
-Retriever
-    │
-    └── SemanticRetriever
-```
-
-Potential future implementations include:
-
-```text
-Retriever
-├── SemanticRetriever
-├── HybridRetriever
-└── RerankingRetriever
+PDF
+ ↓
+Local parsing
+ ↓
+Local chunking
+ ↓
+Local embeddings
+ ↓
+Local Qdrant
+ ↓
+Local retrieval
+ ↓
+Local context building
+ ↓
+Local Ollama/Qwen
+ ↓
+Local cited answer
 ```
 
 ---
 
-### Generation
+# Evaluation Boundary
+
+Retrieval, generation, and citation behaviour are evaluated separately.
+
+Planned retrieval metrics:
 
 ```text
-LLMProvider
-    │
-    └── OllamaProvider
+Recall@K
+Precision@K
+MRR
+nDCG
 ```
-
-Potential future implementations include:
-
-```text
-LLMProvider
-├── OllamaProvider
-├── OpenAIProvider
-├── AnthropicProvider
-└── other local runtimes
-```
-
-The RAG orchestration layer should depend on these interfaces rather than specific infrastructure vendors.
 
 ---
 
-### Token Counting
+# Current State
+
+Completed:
 
 ```text
-ChatTokenCounter
-       │
-       └── HuggingFaceChatTokenCounter
+PDF ingestion
+Chunking
+Embeddings
+Qdrant persistence
+Dense retrieval
+Local generation
+RAG context construction
+Citation integrity
+FastAPI
+React UI
+BM25 lexical retrieval
+RRF hybrid retrieval
+Retrieval routing
+Dense/lexical/hybrid comparison
 ```
 
-The RAG layer therefore depends on a token-counting abstraction rather than directly coupling context construction to a specific tokenizer implementation.
-
----
-
-## Provenance Across the Pipeline
-
-One of the central design goals is preserving source identity through every transformation.
+Next:
 
 ```text
-Research PDF
-     ↓
-ParsedDocument
-     ↓
-DocumentPage
-     ↓
-DocumentChunk
-     ↓
-ChunkEmbedding
-     ↓
-Qdrant Point
-     ↓
-RetrievalResult
-     ↓
-EvidenceBlock
-     ↓
-RAGResponse
-     ↓
-CitationReference + CitationSource
-     ↓
-CitedRAGResponse
+Cross-encoder reranking
 ```
 
-The model provides a prompt-local source key. The validator resolves it to the stored `EvidenceBlock` provenance rather than trusting generated document or page metadata.
-
----
-
-## Local-First Design
-
-The default architecture supports an entirely local workflow:
+Then:
 
 ```text
-Research Document
-       ↓
-Local Parsing
-       ↓
-Local Chunking
-       ↓
-Local Embeddings
-       ↓
-Local Vector Store
-       ↓
-Local Retrieval
-       ↓
-Local Context Construction
-       ↓
-Local LLM
-       ↓
-RAG Response
-       ↓
-Citation Validation
-       ↓
-Cited Response
+Formal labelled evaluation
 ```
-
-This can be valuable when working with:
-
-- research papers
-- unpublished work
-- internal documents
-- confidential technical information
-- private knowledge bases
-
-The local-first design also keeps the baseline independently reproducible without requiring hosted model providers.
-
----
-
-## Testing Boundaries
-
-Each major component is designed to be testable without loading every other subsystem.
-
-Examples:
-
-```text
-Ingestion tests
-    → generated PDFs
-Chunking tests
-    → synthetic document pages
-Embedding service tests
-    → fake embedding provider
-Vector-store tests
-    → in-memory Qdrant
-Retrieval tests
-    → fake embedder + fake vector store
-Generation tests
-    → HTTPX mock transport
-Context-builder tests
-    → fake token counter
-RAG service tests
-    → fake retriever + fake LLM
-Citation parser/validator tests
-    → synthetic evidence and answer strings
-Citation service tests
-    → synthetic RAGResponse
-API model tests
-    → Pydantic validation only
-Application-service tests
-    → fake indexer + registry + retriever + RAG service
-PDF-indexer tests
-    → generated PDFs + lightweight fake model/storage providers
-API route tests
-    → fake ResearchAPI
-Full HTTP smoke test
-    → real local Phases 1–9
-```
-
-Real models and persistent infrastructure are tested separately through smoke tests.
-
-This keeps the normal test suite:
-
-- fast
-- deterministic
-- isolated
-- mostly offline-friendly
-
-while still validating integration behaviour separately.
-
----
-
-## Framework Philosophy
-
-The project intentionally avoids beginning with LangChain, LlamaIndex, or another high-level RAG orchestration framework.
-
-The aim is to understand directly:
-
-- what text is extracted
-- how documents are represented
-- how chunks are created
-- which tokenizer determines chunk size
-- how embeddings are produced
-- what metadata is persisted
-- how vector search behaves
-- what similarity scores represent
-- how source provenance survives retrieval
-- how evidence is selected for context
-- how token budgets constrain RAG
-- what the LLM actually receives
-- how runtime token usage differs from estimates
-- where unsupported answers can originate
-- how source IDs can be validated against selected evidence
-- why citation identity does not guarantee factual support
-
-Higher-level frameworks may be explored later once these mechanics are understood and measurable.
-
----
-
-## Architectural Direction
-
-The completed project is expected to evolve approximately toward:
-
-```text
-                     Research Documents
-                            │
-                            ▼
-                        Ingestion
-                            │
-                            ▼
-                         Chunking
-                            │
-                            ▼
-                        Embeddings
-                            │
-                            ▼
-                       Vector Store
-                            │
-              ┌─────────────┴─────────────┐
-              ▼                           ▼
-        Dense Retrieval              BM25 Retrieval
-              │                           │
-              └─────────────┬─────────────┘
-                            ▼
-                      Hybrid Fusion
-                            │
-                            ▼
-                         Reranker
-                            │
-                            ▼
-                    Context Builder
-                            │
-                            ▼
-                       Local LLM
-                            │
-                            ▼
-                    Grounded Answer
-                            │
-                            ▼
-                     Citation Validator
-                            │
-                            ▼
-                   Cited Answer + Evidence
-                            │
-                            ▼
-                       React Workspace
-                            │
-                            ▼
-                        Evaluation
-```
-
-Each additional component should extend the existing architecture rather than bypassing the interfaces already established.

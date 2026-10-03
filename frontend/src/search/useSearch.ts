@@ -12,6 +12,10 @@ import {
   type SearchResponse,
 } from "../api";
 
+import type {
+  RetrievalMode,
+} from "../api/models";
+
 export interface SearchClient {
   search(
     request: SearchRequest,
@@ -23,10 +27,13 @@ interface UseSearchResult {
   lastQuery: string | null;
   isSearching: boolean;
   error: string | null;
+
   runSearch: (
     query: string,
     documentId: string | null,
+    retrievalMode?: RetrievalMode,
   ) => Promise<boolean>;
+
   clearSearch: () => void;
   clearError: () => void;
 }
@@ -51,12 +58,16 @@ export function useSearch(
   const [
     results,
     setResults,
-  ] = useState<RetrievalResult[]>([]);
+  ] = useState<RetrievalResult[]>(
+    [],
+  );
 
   const [
     lastQuery,
     setLastQuery,
-  ] = useState<string | null>(null);
+  ] = useState<string | null>(
+    null,
+  );
 
   const [
     isSearching,
@@ -66,7 +77,9 @@ export function useSearch(
   const [
     error,
     setError,
-  ] = useState<string | null>(null);
+  ] = useState<string | null>(
+    null,
+  );
 
   const requestSequence =
     useRef(0);
@@ -76,6 +89,8 @@ export function useSearch(
       async (
         query: string,
         documentId: string | null,
+        retrievalMode:
+          RetrievalMode = "dense",
       ): Promise<boolean> => {
         const cleanQuery =
           query.trim();
@@ -96,7 +111,8 @@ export function useSearch(
         setResults([]);
 
         try {
-          const request: SearchRequest = {
+          const request:
+            SearchRequest = {
             query: cleanQuery,
             top_k: 5,
           };
@@ -104,6 +120,21 @@ export function useSearch(
           if (documentId) {
             request.document_id =
               documentId;
+          }
+
+          /*
+           * Dense is the backend default.
+           *
+           * We intentionally omit `mode`
+           * for dense requests so the
+           * original Phase 10 request
+           * shape remains unchanged.
+           */
+          if (
+            retrievalMode !== "dense"
+          ) {
+            request.mode =
+              retrievalMode;
           }
 
           const response =
@@ -141,6 +172,8 @@ export function useSearch(
             ),
           );
 
+          setResults([]);
+
           setLastQuery(
             cleanQuery,
           );
@@ -160,6 +193,11 @@ export function useSearch(
 
   const clearSearch =
     useCallback(() => {
+      /*
+       * Incrementing this invalidates
+       * any request that is still
+       * running.
+       */
       requestSequence.current += 1;
 
       setResults([]);
