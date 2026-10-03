@@ -32,6 +32,9 @@ function getModeLabel(
 
     case "hybrid":
       return "Hybrid";
+
+    case "hybrid_reranked":
+      return "Reranked";
   }
 }
 
@@ -47,6 +50,9 @@ function getRankingDescription(
 
     case "hybrid":
       return "Ranked by reciprocal rank fusion";
+
+    case "hybrid_reranked":
+      return "Ranked by cross-encoder relevance";
   }
 }
 
@@ -62,6 +68,9 @@ function getScoreTitle(
 
     case "hybrid":
       return "Reciprocal rank fusion score";
+
+    case "hybrid_reranked":
+      return "Cross-encoder relevance score";
   }
 }
 

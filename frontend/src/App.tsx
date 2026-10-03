@@ -328,6 +328,9 @@ function App({
 
       case "hybrid":
         return "Hybrid search";
+
+      case "hybrid_reranked":
+        return "Reranked search";
     }
   }
 
@@ -341,6 +344,9 @@ function App({
 
       case "hybrid":
         return "Search using semantic and lexical evidence together...";
+
+      case "hybrid_reranked":
+        return "Search with hybrid retrieval and cross-encoder reranking...";
     }
   }
 
@@ -528,6 +534,26 @@ function App({
                       }
                     >
                       Hybrid
+                    </button>
+                    <button
+                      className={`mode-button ${
+                        retrievalMode ===
+                        "hybrid_reranked"
+                          ? "active"
+                          : ""
+                      }`}
+                      type="button"
+                      aria-pressed={
+                        retrievalMode ===
+                        "hybrid_reranked"
+                      }
+                      onClick={() =>
+                        handleRetrievalModeChange(
+                          "hybrid_reranked",
+                        )
+                      }
+                    >
+                      Reranked
                     </button>
                   </div>
                 </div>

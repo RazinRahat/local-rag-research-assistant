@@ -771,4 +771,107 @@ describe("App", () => {
       });
     });
   });
+
+  it("performs reranked search when reranked retrieval is selected", async () => {
+    const user =
+      userEvent.setup();
+
+    const searchMock =
+      vi.fn<
+        SearchClient["search"]
+      >();
+
+    searchMock.mockResolvedValue(
+      makeSearchResponse(),
+    );
+
+    render(
+      <App
+        documentClient={
+          makeDocumentClient()
+        }
+        searchClient={{
+          search: searchMock,
+        }}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole(
+        "button",
+        {
+          name: "Search",
+        },
+      ),
+    );
+
+    await user.click(
+      screen.getByRole(
+        "button",
+        {
+          name: "Reranked",
+        },
+      ),
+    );
+
+    expect(
+      screen.getByRole(
+        "button",
+        {
+          name: "Reranked",
+        },
+      ),
+    ).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    const input =
+      screen.getByRole(
+        "textbox",
+        {
+          name:
+            "Reranked search",
+        },
+      );
+
+    await user.type(
+      input,
+      "attention mechanisms",
+    );
+
+    await user.click(
+      screen.getByRole(
+        "button",
+        {
+          name:
+            "Search evidence",
+        },
+      ),
+    );
+
+    await waitFor(() => {
+      expect(
+        searchMock,
+      ).toHaveBeenCalledWith({
+        query:
+          "attention mechanisms",
+        top_k: 5,
+        mode:
+          "hybrid_reranked",
+      });
+    });
+
+    expect(
+      await screen.findByText(
+        "RERANKED RETRIEVAL",
+      ),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(
+        "Ranked by cross-encoder relevance",
+      ),
+    ).toBeInTheDocument();
+  });
 });

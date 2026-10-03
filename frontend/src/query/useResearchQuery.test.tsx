@@ -390,4 +390,40 @@ describe("useResearchQuery", () => {
       "hybrid",
     );
   });
+
+  it("forwards hybrid reranked retrieval mode", async () => {
+    let receivedMode:
+      string | undefined;
+
+    const client =
+      makeClient(
+        async (request) => {
+          receivedMode =
+            request.mode;
+
+          return RESPONSE;
+        },
+      );
+
+    const { result } =
+      renderHook(() =>
+        useResearchQuery(
+          client,
+        ),
+      );
+
+    await act(async () => {
+      await result.current.runQuery(
+        "Explain the attention mechanism.",
+        null,
+        "hybrid_reranked",
+      );
+    });
+
+    expect(
+      receivedMode,
+    ).toBe(
+      "hybrid_reranked",
+    );
+  });
 });

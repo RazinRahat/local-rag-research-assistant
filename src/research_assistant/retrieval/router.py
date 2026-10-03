@@ -9,7 +9,7 @@ from research_assistant.retrieval.models import (
 
 
 class RetrievalRouter:
-    """Route retrieval requests to the configured strategy."""
+    """Route retrieval requests to a configured strategy."""
 
     def __init__(
         self,
@@ -17,14 +17,16 @@ class RetrievalRouter:
         dense_retriever: Retriever,
         lexical_retriever: Retriever,
         hybrid_retriever: Retriever,
+        hybrid_reranked_retriever: Retriever,
     ) -> None:
         self._retrievers: dict[
             RetrievalMode,
             Retriever,
         ] = {
-            RetrievalMode.DENSE: dense_retriever,
-            RetrievalMode.LEXICAL: lexical_retriever,
-            RetrievalMode.HYBRID: hybrid_retriever,
+            RetrievalMode.DENSE: (dense_retriever),
+            RetrievalMode.LEXICAL: (lexical_retriever),
+            RetrievalMode.HYBRID: (hybrid_retriever),
+            RetrievalMode.HYBRID_RERANKED: (hybrid_reranked_retriever),
         }
 
     def retrieve(
@@ -32,7 +34,7 @@ class RetrievalRouter:
         query: str,
         config: RetrievalConfig | None = None,
     ) -> tuple[RetrievalResult, ...]:
-        """Retrieve evidence using the selected strategy."""
+        """Retrieve using the configured strategy."""
 
         retrieval_config = config or RetrievalConfig()
 

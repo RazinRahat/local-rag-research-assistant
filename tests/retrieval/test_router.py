@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from research_assistant.retrieval.base import (
     Retriever,
 )
@@ -20,7 +18,7 @@ class FakeRetriever:
         self.calls: list[
             tuple[
                 str,
-                RetrievalConfig | None,
+                RetrievalConfig,
             ]
         ] = []
 
@@ -29,10 +27,12 @@ class FakeRetriever:
         query: str,
         config: RetrievalConfig | None = None,
     ) -> tuple[RetrievalResult, ...]:
+        retrieval_config = config or RetrievalConfig()
+
         self.calls.append(
             (
                 query,
-                config,
+                retrieval_config,
             )
         )
 
@@ -44,15 +44,18 @@ def make_router() -> tuple[
     FakeRetriever,
     FakeRetriever,
     FakeRetriever,
+    FakeRetriever,
 ]:
     dense = FakeRetriever()
     lexical = FakeRetriever()
     hybrid = FakeRetriever()
+    hybrid_reranked = FakeRetriever()
 
     router = RetrievalRouter(
         dense_retriever=dense,
         lexical_retriever=lexical,
         hybrid_retriever=hybrid,
+        hybrid_reranked_retriever=(hybrid_reranked),
     )
 
     return (
@@ -60,15 +63,24 @@ def make_router() -> tuple[
         dense,
         lexical,
         hybrid,
+        hybrid_reranked,
     )
 
 
 def test_router_satisfies_retriever_protocol() -> None:
-    router, _, _, _ = make_router()
+    (
+        router,
+        _,
+        _,
+        _,
+        _,
+    ) = make_router()
 
     retriever: Retriever = router
 
-    assert retriever.retrieve("attention") == ()
+    results = retriever.retrieve("attention")
+
+    assert results == ()
 
 
 def test_router_uses_dense_by_default() -> None:
@@ -77,17 +89,20 @@ def test_router_uses_dense_by_default() -> None:
         dense,
         lexical,
         hybrid,
+        hybrid_reranked,
     ) = make_router()
 
     router.retrieve("attention")
 
     assert len(dense.calls) == 1
+
     assert lexical.calls == []
     assert hybrid.calls == []
+    assert hybrid_reranked.calls == []
 
-    _, config = dense.calls[0]
+    query, config = dense.calls[0]
 
-    assert config is not None
+    assert query == "attention"
 
     assert config.mode == RetrievalMode.DENSE
 
@@ -98,6 +113,7 @@ def test_router_selects_dense_mode() -> None:
         dense,
         lexical,
         hybrid,
+        hybrid_reranked,
     ) = make_router()
 
     config = RetrievalConfig(
@@ -118,6 +134,7 @@ def test_router_selects_dense_mode() -> None:
 
     assert lexical.calls == []
     assert hybrid.calls == []
+    assert hybrid_reranked.calls == []
 
 
 def test_router_selects_lexical_mode() -> None:
@@ -126,6 +143,7 @@ def test_router_selects_lexical_mode() -> None:
         dense,
         lexical,
         hybrid,
+        hybrid_reranked,
     ) = make_router()
 
     config = RetrievalConfig(
@@ -133,7 +151,7 @@ def test_router_selects_lexical_mode() -> None:
     )
 
     router.retrieve(
-        "Adam optimizer",
+        "attention",
         config,
     )
 
@@ -141,12 +159,13 @@ def test_router_selects_lexical_mode() -> None:
 
     assert lexical.calls == [
         (
-            "Adam optimizer",
+            "attention",
             config,
         )
     ]
 
     assert hybrid.calls == []
+    assert hybrid_reranked.calls == []
 
 
 def test_router_selects_hybrid_mode() -> None:
@@ -155,16 +174,15 @@ def test_router_selects_hybrid_mode() -> None:
         dense,
         lexical,
         hybrid,
+        hybrid_reranked,
     ) = make_router()
 
     config = RetrievalConfig(
-        top_k=7,
-        document_id=DOCUMENT_ID,
         mode=RetrievalMode.HYBRID,
     )
 
     router.retrieve(
-        "self attention",
+        "attention",
         config,
     )
 
@@ -173,7 +191,39 @@ def test_router_selects_hybrid_mode() -> None:
 
     assert hybrid.calls == [
         (
-            "self attention",
+            "attention",
+            config,
+        )
+    ]
+
+    assert hybrid_reranked.calls == []
+
+
+def test_router_selects_hybrid_reranked_mode() -> None:
+    (
+        router,
+        dense,
+        lexical,
+        hybrid,
+        hybrid_reranked,
+    ) = make_router()
+
+    config = RetrievalConfig(
+        mode=(RetrievalMode.HYBRID_RERANKED),
+    )
+
+    router.retrieve(
+        "attention",
+        config,
+    )
+
+    assert dense.calls == []
+    assert lexical.calls == []
+    assert hybrid.calls == []
+
+    assert hybrid_reranked.calls == [
+        (
+            "attention",
             config,
         )
     ]
@@ -185,26 +235,33 @@ def test_router_preserves_retrieval_configuration() -> None:
         dense,
         _,
         _,
+        _,
     ) = make_router()
 
     config = RetrievalConfig(
-        top_k=3,
-        score_threshold=0.5,
+        top_k=8,
+        score_threshold=0.4,
         document_id=DOCUMENT_ID,
         mode=RetrievalMode.DENSE,
     )
 
     router.retrieve(
-        "transformer",
+        "attention",
         config,
     )
 
-    _, forwarded = dense.calls[0]
+    assert len(dense.calls) == 1
 
-    assert forwarded is config
+    query, received_config = dense.calls[0]
 
-    assert forwarded.top_k == 3
+    assert query == "attention"
 
-    assert forwarded.score_threshold == 0.5
+    assert received_config is config
 
-    assert forwarded.document_id == DOCUMENT_ID
+    assert received_config.top_k == 8
+
+    assert received_config.score_threshold == 0.4
+
+    assert received_config.document_id == DOCUMENT_ID
+
+    assert received_config.mode == RetrievalMode.DENSE

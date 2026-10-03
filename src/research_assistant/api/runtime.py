@@ -38,6 +38,13 @@ from research_assistant.rag.service import (
 from research_assistant.rag.token_counter import (
     HuggingFaceChatTokenCounter,
 )
+from research_assistant.reranking.cross_encoder import (
+    CrossEncoderReranker,
+    SentenceTransformersCrossEncoder,
+)
+from research_assistant.reranking.retriever import (
+    RerankingRetriever,
+)
 from research_assistant.retrieval.hybrid import (
     HybridRetriever,
 )
@@ -92,10 +99,20 @@ def build_local_service() -> ResearchService:
         lexical_retriever=(lexical_retriever),
     )
 
+    cross_encoder_scorer = SentenceTransformersCrossEncoder()
+
+    cross_encoder_reranker = CrossEncoderReranker(cross_encoder_scorer)
+
+    hybrid_reranked_retriever = RerankingRetriever(
+        retriever=(hybrid_retriever),
+        reranker=(cross_encoder_reranker),
+    )
+
     retriever = RetrievalRouter(
         dense_retriever=(dense_retriever),
         lexical_retriever=(lexical_retriever),
         hybrid_retriever=(hybrid_retriever),
+        hybrid_reranked_retriever=(hybrid_reranked_retriever),
     )
 
     llm = OllamaProvider(LLMConfig())

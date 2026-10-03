@@ -1,5 +1,3 @@
-"""HTTP request and response models for the research API."""
-
 from typing import Self
 
 from pydantic import (
@@ -45,7 +43,7 @@ class RetrievalOptions(BaseModel):
     mode: RetrievalMode = RetrievalMode.DENSE
 
     @model_validator(mode="after")
-    def validate_threshold_mode(
+    def validate_score_threshold(
         self,
     ) -> Self:
         if self.mode != RetrievalMode.DENSE and self.score_threshold is not None:
@@ -61,7 +59,7 @@ class RetrievalOptions(BaseModel):
         return RetrievalConfig(
             top_k=self.top_k,
             score_threshold=(self.score_threshold),
-            document_id=self.document_id,
+            document_id=(self.document_id),
             mode=self.mode,
         )
 
@@ -111,9 +109,11 @@ class QueryRequest(RetrievalOptions):
 
 
 class SearchResponse(BaseModel):
-    """Response returned by the search endpoint."""
+    """Response returned by the retrieval endpoint."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
     query: str
 

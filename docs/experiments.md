@@ -318,6 +318,207 @@ The experiment does not prove that hybrid retrieval has higher retrieval accurac
 
 ---
 
+# Phase 12 — Cross-Encoder Reranking Comparison
+
+Phase 12 compared the frozen Phase 11 hybrid baseline against a second-stage cross-encoder reranker.
+
+## Configuration
+
+```text
+queries:                  6
+scope:                    all indexed documents
+final top_k:              5
+repeats:                  3
+warm-up:                  enabled
+
+Hybrid:
+  RRF k:                  60
+  candidate multiplier:    2
+
+Reranking:
+  model:
+    cross-encoder/ms-marco-MiniLM-L6-v2
+  candidate pool:         20
+```
+
+The experiment compared:
+
+```text
+hybrid
+hybrid_reranked
+```
+
+The six Phase 11 queries were reused without changing the query set.
+
+---
+
+## Aggregate Measurements
+
+```text
+Mean top-5 Jaccard:             ≈ 0.409
+Top-1 agreement:                1 / 6
+Top-1 agreement rate:           ≈ 16.7%
+
+Hybrid median latency:          ≈ 35.1 ms
+Reranked median latency:        ≈ 108.9 ms
+Added end-to-end latency:       ≈ 73.8 ms
+```
+
+The latency difference includes both deeper hybrid candidate retrieval and cross-encoder inference.
+
+It should not be interpreted as pure cross-encoder execution time.
+
+---
+
+## Query-Level Observations
+
+### `Adam optimizer`
+
+Hybrid retrieval ranked the Transformer passage containing the actual optimizer configuration first.
+
+The cross-encoder instead promoted a scaling-law passage containing the phrase `adam-optimized training runs`.
+
+That passage moved from hybrid rank 4 to reranked rank 1.
+
+This is an important reranking failure case.
+
+It suggests that a short technical keyword query can cause the current reranker to reward topical or lexical compatibility without necessarily selecting the most useful passage for the likely information need.
+
+---
+
+### `label smoothing`
+
+Both modes returned the direct Transformer label-smoothing passage at rank 1.
+
+Four of the five final chunks were shared.
+
+```text
+Top-5 Jaccard ≈ 0.667
+Top-1 unchanged
+```
+
+The Phase 11 hybrid pipeline already handled this exact rare-term query effectively.
+
+---
+
+### Semantic Paraphrase
+
+Query:
+
+```text
+Why can the model process sequence positions in parallel?
+```
+
+Hybrid retrieval placed the direct recurrence/parallelisation explanation at rank 2.
+
+Cross-encoder reranking promoted that passage to rank 1.
+
+This is a qualitatively promising example of second-stage semantic reranking.
+
+---
+
+### Multi-Head Attention
+
+Query:
+
+```text
+How does multi-head attention work?
+```
+
+The reranker promoted the explanatory section describing query/key/value projections, parallel attention heads, concatenation, and representation subspaces to rank 1.
+
+It had been hybrid rank 3.
+
+The top-five candidate sets still differed substantially:
+
+```text
+Top-5 Jaccard = 0.25
+```
+
+This is a useful qualitative success case, but it is not yet a measured accuracy improvement.
+
+---
+
+### Dataset Query
+
+Query:
+
+```text
+What datasets were used to evaluate the model?
+```
+
+The top result changed between different papers in the corpus.
+
+Because the question refers only to `the model` while the experiment searches the whole corpus, the query is underspecified.
+
+This shows that retrieval failures can originate from query ambiguity as well as ranking.
+
+Document-scoped evaluation should therefore be included in later experiments.
+
+---
+
+### Architecture / Recurrence
+
+Query:
+
+```text
+Why does the Transformer avoid recurrent computation?
+```
+
+Hybrid retrieval ranked the direct explanation of recurrent sequential computation first.
+
+Cross-encoder reranking moved that passage to rank 2 and promoted a later conclusion/table passage to rank 1.
+
+The top-five overlap was:
+
+```text
+0.25
+```
+
+This is another useful reranking failure case.
+
+---
+
+## Phase 12 Conclusion
+
+The experiment shows that reranking materially changes final evidence selection.
+
+Observed behaviours include:
+
+- semantic promotion
+- exact-term stability
+- candidate replacement
+- large rank movement
+- sensitivity to ambiguous whole-corpus queries
+- meaningful reranking regressions
+
+The experiment does **not** establish that `hybrid_reranked` has higher retrieval accuracy than `hybrid`.
+
+No relevance labels were used.
+
+Phase 13 will introduce labelled query-to-evidence relationships so ranking changes can be measured using:
+
+```text
+Recall@K
+Precision@K
+MRR
+nDCG
+```
+
+Raw generated reports remain local under:
+
+```text
+experiments/results/
+```
+
+The Phase 12 comparison utility is:
+
+```text
+scripts/compare_reranking_modes.py
+```
+
+---
+
 # Formal Retrieval Evaluation
 
 Phase 13 will introduce labelled query-to-evidence relationships.
@@ -399,10 +600,11 @@ Future evaluation should measure:
 
 # Reproducibility
 
-Phase 11 comparison utilities:
+Comparison utilities:
 
 ```text
 scripts/compare_retrieval_modes.py
+scripts/compare_reranking_modes.py
 experiments/retrieval_queries.json
 ```
 

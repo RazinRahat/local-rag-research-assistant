@@ -279,38 +279,102 @@ docs/experiments.md
 
 ---
 
-## Phase 12 — Reranking ← NEXT
+## Phase 12 — Cross-Encoder Reranking ✅
 
-Planned:
+### Reranking Layer
 
-- cross-encoder reranker
-- candidate-set expansion
-- candidate rescoring
-- final top-k reduction
-- reranking abstraction
-- dense/hybrid baseline comparison
-- latency measurement
-- reranking tests
-
-Expected architecture:
+Implemented:
 
 ```text
-Query
- │
- ├── Dense
- │
- └── BM25
-      ↓
-     RRF
-      ↓
-Candidate Set
-      ↓
-Cross-Encoder
-      ↓
-Reranked Evidence
+Hybrid retrieval
+ ↓
+expanded candidate pool
+ ↓
+cross-encoder scoring
+ ↓
+final top-k
 ```
 
-The Phase 11 configuration should initially remain frozen so reranking effects can be isolated.
+Baseline:
+
+```text
+model:
+  cross-encoder/ms-marco-MiniLM-L6-v2
+
+candidate pool:
+  20
+
+final top_k:
+  5
+```
+
+### Architecture
+
+- `Reranker` protocol
+- local Sentence Transformers cross-encoder scorer
+- deterministic `CrossEncoderReranker`
+- `RerankingRetriever`
+- candidate expansion
+- final rank reconstruction
+- unchanged Phase 11 hybrid control
+
+### Retrieval Mode
+
+Added:
+
+```text
+hybrid_reranked
+```
+
+Available through:
+
+```text
+POST /search
+POST /query
+React workspace
+```
+
+Dense remains the default.
+
+### Frontend
+
+Implemented:
+
+```text
+Dense | Lexical | Hybrid | Reranked
+```
+
+The frontend preserves strategy-specific score semantics and invalidates stale research results when retrieval mode changes.
+
+### Controlled Comparison
+
+Six fixed queries were run through:
+
+```text
+hybrid
+hybrid_reranked
+```
+
+Measured:
+
+```text
+Mean top-5 Jaccard:           ≈ 0.409
+Top-1 agreement:              1 / 6
+Hybrid median latency:        ≈ 35.1 ms
+Reranked median latency:      ≈ 108.9 ms
+Added latency:                ≈ 73.8 ms
+```
+
+Reranking produced useful semantic promotions as well as clear regressions.
+
+Phase 12 therefore establishes reranking behaviour and integration, not higher retrieval accuracy.
+
+Detailed findings:
+
+```text
+docs/reranking.md
+docs/experiments.md
+```
 
 ---
 
@@ -430,8 +494,8 @@ Phase 8   Citations               ✅
 Phase 9   API                     ✅
 Phase 10  Frontend                ✅
 Phase 11  Hybrid Retrieval        ✅
-Phase 12  Reranking               ← NEXT
-Phase 13  Evaluation
+Phase 12  Reranking               ✅
+Phase 13  Evaluation              ← NEXT
 Phase 14  Research Features
 Phase 15  Observability
 Phase 16  Containerisation

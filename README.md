@@ -6,7 +6,7 @@ The project is built component by component so the mechanics behind ingestion, c
 
 ## Current Status
 
-**Phase 11 complete — local research workspace with selectable dense, lexical, and hybrid retrieval.**
+**Phase 12 complete — local research workspace with selectable dense, lexical, hybrid, and cross-encoder-reranked retrieval.**
 
 ```text
 Research PDF
@@ -23,9 +23,12 @@ Retrieval Router
      │
      ├── Dense Retrieval
      ├── BM25 Lexical Retrieval
-     └── Hybrid Retrieval
+     ├── Hybrid Retrieval
+     │        ↓
+     │ Reciprocal Rank Fusion
+     └── Hybrid + Reranking
               ↓
-       Reciprocal Rank Fusion
+       Cross-Encoder Reranker
      ↓
 Bounded Context Construction
      ↓
@@ -88,12 +91,13 @@ BAAI/bge-small-en-v1.5
 
 ### Retrieval
 
-The system exposes three retrieval strategies:
+The system exposes four retrieval strategies:
 
 ```text
 Dense
 Lexical
 Hybrid
+Hybrid + Reranking
 ```
 
 #### Dense Retrieval
@@ -160,6 +164,26 @@ final top_k:             5
 
 Raw cosine and BM25 scores are not averaged because they use incompatible numerical scales.
 
+#### Cross-Encoder Reranking
+
+Phase 12 adds a second-stage reranker after hybrid retrieval.
+
+```text
+Dense + BM25
+     ↓
+    RRF
+     ↓
+Top 20 Candidates
+     ↓
+cross-encoder/ms-marco-MiniLM-L6-v2
+     ↓
+Final Top 5
+```
+
+The Phase 11 `hybrid` mode remains unchanged as a control.
+
+The new `hybrid_reranked` mode uses the cross-encoder relevance score for the final ranking. These scores are not calibrated probabilities and are not numerically comparable with cosine, BM25, or RRF scores.
+
 ### Retrieval Modes
 
 Retrieval mode can be selected through both:
@@ -175,6 +199,7 @@ Supported values:
 dense
 lexical
 hybrid
+hybrid_reranked
 ```
 
 Dense remains the backward-compatible default.
@@ -184,7 +209,8 @@ Dense remains the backward-compatible default.
 - Dense semantic retrieval using BGE + Qdrant
 - BM25 lexical retrieval
 - Reciprocal Rank Fusion
-- Selectable dense, lexical, and hybrid retrieval
+- Selectable dense, lexical, hybrid, and cross-encoder-reranked retrieval
+- Candidate expansion and second-stage reranking
 - Configurable top-k retrieval
 - Document-scoped retrieval
 - Dense-only optional cosine score thresholds
@@ -244,7 +270,7 @@ The React research workspace provides:
 - document-specific scope
 - Ask mode
 - Search mode
-- Dense / Lexical / Hybrid selector
+- Dense / Lexical / Hybrid / Reranked selector
 - ranked evidence cards
 - retrieval-score display
 - cited RAG answers
@@ -332,6 +358,41 @@ See:
 
 ---
 
+## Phase 12 Cross-Encoder Reranking Experiment
+
+Phase 12 reused the same six-query set to compare the frozen hybrid baseline against `hybrid_reranked`.
+
+Configuration:
+
+```text
+top_k = 5
+repeats = 3
+warm-up = enabled
+candidate pool = 20
+cross-encoder = cross-encoder/ms-marco-MiniLM-L6-v2
+```
+
+Measured:
+
+```text
+Mean top-5 Jaccard overlap:   ≈ 0.409
+Top-1 agreement:              1 / 6
+Hybrid median latency:        ≈ 35.1 ms
+Reranked median latency:      ≈ 108.9 ms
+Added end-to-end latency:     ≈ 73.8 ms
+```
+
+The reranker produced useful semantic promotions on some explanatory queries, but also clear regressions on others. For example, it promoted the direct recurrence/parallelisation explanation for a semantic paraphrase, while the short query `Adam optimizer` caused it to over-promote a less useful scaling-law passage.
+
+Phase 12 therefore establishes reranking behaviour and integration, not higher retrieval accuracy.
+
+See:
+
+- [Cross-Encoder Reranking](docs/reranking.md)
+- [Experiments](docs/experiments.md)
+
+---
+
 ## Architecture
 
 ```text
@@ -351,15 +412,18 @@ See:
                  ▼                             ▼
             Document Pipeline             RetrievalRouter
                  │                             │
-                 ▼                  ┌──────────┼──────────┐
-               Qdrant              ▼          ▼          ▼
-                               Dense      Lexical      Hybrid
-                                 │           │           │
-                                 │           │       Dense + BM25
-                                 │           │           │
-                                 │           │           ▼
-                                 │           │          RRF
-                                 └───────────┴───────────┘
+                 ▼             ┌─────────┬─────────┬──────────┬──────────────────┐
+               Qdrant            ▼         ▼         ▼          ▼
+                              Dense     Lexical    Hybrid   Hybrid Reranked
+                                │          │         │          │
+                                │          │    Dense + BM25    │
+                                │          │         │          │
+                                │          │         ▼          │
+                                │          │        RRF ────────┘
+                                │          │                    │
+                                │          │                    ▼
+                                │          │              Cross-Encoder
+                                └──────────┴────────────────────┘
                                              │
                                              ▼
                                       ContextBuilder
@@ -444,7 +508,8 @@ frontend/
     └── query/
 
 scripts/
-└── compare_retrieval_modes.py
+├── compare_retrieval_modes.py
+└── compare_reranking_modes.py
 
 experiments/
 ├── retrieval_queries.json
@@ -460,6 +525,7 @@ docs/
 ├── vector-store.md
 ├── retrieval.md
 ├── hybrid-retrieval.md
+├── reranking.md
 ├── generation.md
 ├── rag-pipeline.md
 ├── citations.md
@@ -560,6 +626,7 @@ Qdrant stores source text and provenance metadata, so the local vector store sho
 - [Vector Storage](docs/vector-store.md)
 - [Retrieval](docs/retrieval.md)
 - [Hybrid Retrieval](docs/hybrid-retrieval.md)
+- [Cross-Encoder Reranking](docs/reranking.md)
 - [Local Generation](docs/generation.md)
 - [End-to-End RAG Pipeline](docs/rag-pipeline.md)
 - [Citation Integrity](docs/citations.md)
@@ -570,11 +637,11 @@ Qdrant stores source text and provenance metadata, so the local vector store sho
 
 ## Roadmap
 
-**Completed through Phase 11:** foundation, ingestion, token-aware chunking, local embeddings, persistent Qdrant storage, dense retrieval, local LLM integration, end-to-end RAG, citation integrity, FastAPI, React workspace, BM25 lexical retrieval, Reciprocal Rank Fusion, and selectable hybrid retrieval.
+**Completed through Phase 12:** foundation, ingestion, token-aware chunking, local embeddings, persistent Qdrant storage, dense retrieval, local LLM integration, end-to-end RAG, citation integrity, FastAPI, React workspace, BM25 lexical retrieval, Reciprocal Rank Fusion, selectable hybrid retrieval, and local cross-encoder reranking.
 
-**Next:** Phase 12 — cross-encoder reranking.
+**Next:** Phase 13 — formal relevance-labelled retrieval and RAG evaluation.
 
-**After that:** Phase 13 — formal labelled retrieval and RAG evaluation.
+**After that:** research-specific features, observability, containerisation, deployment, and broader benchmarking.
 
 ---
 
@@ -592,4 +659,4 @@ Qdrant stores source text and provenance metadata, so the local vector store sho
 
 ---
 
-🚧 Under active development. Phase 11 hybrid retrieval is complete; Phase 12 reranking is next.
+🚧 Under active development. Phase 12 cross-encoder reranking is complete; Phase 13 labelled evaluation is next.

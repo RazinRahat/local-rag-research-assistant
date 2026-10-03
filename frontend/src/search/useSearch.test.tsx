@@ -331,6 +331,40 @@ describe("useSearch", () => {
     );
   });
 
+  it("forwards hybrid reranked retrieval mode", async () => {
+    let receivedMode:
+      string | undefined;
+
+    const client =
+      makeClient(
+        async (request) => {
+          receivedMode =
+            request.mode;
+
+          return RESPONSE;
+        },
+      );
+
+    const { result } =
+      renderHook(() =>
+        useSearch(client),
+      );
+
+    await act(async () => {
+      await result.current.runSearch(
+        "attention",
+        null,
+        "hybrid_reranked",
+      );
+    });
+
+    expect(
+      receivedMode,
+    ).toBe(
+      "hybrid_reranked",
+    );
+  });
+
   it("keeps dense retrieval implicit for backward compatibility", async () => {
     let receivedRequest:
       Parameters<

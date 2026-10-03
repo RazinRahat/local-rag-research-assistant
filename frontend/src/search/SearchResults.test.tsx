@@ -145,4 +145,49 @@ describe("SearchResults", () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it("renders reranked score semantics", () => {
+    render(
+      <SearchResults
+        query="attention"
+        results={[RESULT]}
+        isSearching={false}
+        error={null}
+        retrievalMode={
+          "hybrid_reranked"
+        }
+        onDismissError={() =>
+          undefined
+        }
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "RERANKED RETRIEVAL",
+      ),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(
+        "Ranked by cross-encoder relevance",
+      ),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByTitle(
+        "Cross-encoder relevance score",
+      ),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole(
+        "region",
+        {
+          name:
+            "Reranked search results",
+        },
+      ),
+    ).toBeInTheDocument();
+  });
 });

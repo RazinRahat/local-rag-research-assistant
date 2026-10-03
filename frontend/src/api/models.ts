@@ -32,7 +32,8 @@ export interface RetrievalResult {
 export type RetrievalMode =
   | "dense"
   | "lexical"
-  | "hybrid";
+  | "hybrid"
+  | "hybrid_reranked";
 
 export interface RetrievalOptions {
   top_k?: number;
