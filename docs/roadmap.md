@@ -130,7 +130,7 @@ Also includes context budgeting, evidence labels, redundancy filtering, whole-ch
 - trusted provenance
 - typed `CitedRAGResponse`
 
-Boundary: citation identity validation does not yet prove claim-level semantic entailment.
+Boundary: citation identity validation does not prove claim-level semantic entailment.
 
 ---
 
@@ -196,11 +196,13 @@ b = 0.75
 
 ### Reciprocal Rank Fusion
 
+Historical Phase 11 formula:
+
 ```text
 RRF(d) = Σ 1 / (k + rank_i(d))
 ```
 
-Baseline:
+Historical baseline:
 
 ```text
 k = 60
@@ -224,58 +226,9 @@ Candidate multiplier:
 2
 ```
 
-### Retrieval Routing
-
-Supported modes:
-
-```text
-dense
-lexical
-hybrid
-```
-
-Dense remains the default.
-
-The same router is used by `/search` and `/query`.
-
-### Frontend
-
-Implemented:
-
-```text
-Dense | Lexical | Hybrid
-```
-
-Changing retrieval mode invalidates existing and in-flight research results.
-
 ### Controlled Smoke Comparison
 
-Six-query whole-corpus comparison:
-
-```text
-top_k = 5
-```
-
-Average top-five Jaccard overlap:
-
-```text
-Dense ↔ Lexical    ≈ 0.214
-Dense ↔ Hybrid     ≈ 0.478
-Lexical ↔ Hybrid   ≈ 0.507
-```
-
-A useful exact-term example was `Adam optimizer`, where dense ranked the actual optimizer-method passage second while lexical and hybrid promoted it to rank one.
-
-Phase 11 demonstrates complementary retrieval behaviour.
-
-It does not claim that hybrid retrieval has higher accuracy.
-
-Detailed findings:
-
-```text
-docs/hybrid-retrieval.md
-docs/experiments.md
-```
+The six-query comparison established dense/lexical complementarity but did not claim higher Hybrid accuracy.
 
 ---
 
@@ -295,7 +248,7 @@ cross-encoder scoring
 final top-k
 ```
 
-Baseline:
+Historical Phase 12 baseline:
 
 ```text
 model:
@@ -316,7 +269,7 @@ final top_k:
 - `RerankingRetriever`
 - candidate expansion
 - final rank reconstruction
-- unchanged Phase 11 hybrid control
+- unchanged Hybrid control
 
 ### Retrieval Mode
 
@@ -326,99 +279,221 @@ Added:
 hybrid_reranked
 ```
 
-Available through:
+Available through `/search`, `/query`, and the React workspace.
 
-```text
-POST /search
-POST /query
-React workspace
-```
+### Controlled Comparison
 
-Dense remains the default.
+The six-query Phase 12 experiment showed useful semantic promotions as well as clear regressions.
 
-### Frontend
+Phase 12 therefore established reranking behaviour and integration, not higher retrieval accuracy.
+
+---
+
+## Phase 13 — Formal Evaluation ✅
+
+Phase 13 moved the project from qualitative retrieval inspection to measured relevance-labelled evaluation.
+
+### 13.1 Metric Primitives ✅
 
 Implemented:
 
 ```text
-Dense | Lexical | Hybrid | Reranked
-```
-
-The frontend preserves strategy-specific score semantics and invalidates stale research results when retrieval mode changes.
-
-### Controlled Comparison
-
-Six fixed queries were run through:
-
-```text
-hybrid
-hybrid_reranked
-```
-
-Measured:
-
-```text
-Mean top-5 Jaccard:           ≈ 0.409
-Top-1 agreement:              1 / 6
-Hybrid median latency:        ≈ 35.1 ms
-Reranked median latency:      ≈ 108.9 ms
-Added latency:                ≈ 73.8 ms
-```
-
-Reranking produced useful semantic promotions as well as clear regressions.
-
-Phase 12 therefore establishes reranking behaviour and integration, not higher retrieval accuracy.
-
-Detailed findings:
-
-```text
-docs/reranking.md
-docs/experiments.md
-```
-
----
-
-## Phase 13 — Evaluation
-
-### Retrieval
-
-```text
-Recall@K
 Precision@K
+Recall@K
 MRR
 nDCG
 ```
 
-Compare dense, lexical, hybrid, hybrid + reranking, candidate depth, top-k, BM25 parameters, RRF parameters, embedding models, and chunking.
+Also added typed per-query/aggregate metrics and comparison models.
 
-### Answer Evaluation
+### 13.2 Candidate Pooling ✅
 
-Potential dimensions:
+- pooled candidates across Dense, Lexical, Hybrid, and Hybrid + Reranking
+- top-20 diagnostic traces
+- separate review and trace artifacts
 
-- faithfulness
-- answer relevance
-- context relevance
-- completeness
-- abstention quality
+### 13.3 Graded Qrels ✅
 
-### Citation Evaluation
+Relevance scale:
 
-Separate citation identity validity from semantic claim support.
+```text
+0 = irrelevant
+1 = marginal
+2 = useful
+3 = direct
+```
+
+Expanded qrels:
+
+```text
+18 queries
+527 judgments
+53 binary-relevant judgments at threshold >= 2
+```
+
+Review process: model-assisted and blind to system identity/rank.
+
+### 13.4 Split-Aware Evaluation ✅
+
+```text
+12 development queries
+6 holdout queries
+```
+
+Development queries could be used for diagnosis/tuning.
+
+Holdout evaluation required explicit confirmation and remained sealed until retrieval configuration was frozen.
+
+### 13.5 Initial Formal Benchmark ✅
+
+Initial development aggregate:
+
+| Mode | P@5 | Recall@5 | MRR | nDCG@5 |
+|---|---:|---:|---:|---:|
+| Dense | 0.2500 | 0.4514 | 0.5556 | 0.4551 |
+| Lexical | 0.3667 | 0.6319 | 0.7222 | 0.6264 |
+| Hybrid | 0.3500 | 0.5903 | 0.5306 | 0.4951 |
+| Hybrid + Reranking | 0.3167 | 0.5625 | 0.5958 | 0.4801 |
+
+The benchmark showed that more complex retrieval was not automatically better.
+
+### 13.6 Improvement / Degradation Ledger ✅
+
+Evaluation records both aggregate metrics and query-level improvements, degradations, mixed outcomes, and unchanged cases.
+
+The project explicitly preserves failure cases instead of reporting only aggregate gains.
+
+### 13.7 Expanded Benchmark ✅
+
+Three papers:
+
+```text
+Attention Is All You Need
+Language Models are Unsupervised Multitask Learners
+Scaling Laws for Neural Language Models
+```
+
+All 18 expanded questions are document-scoped.
+
+### 13.8 Evidence-Driven Retrieval Tuning ✅
+
+#### Weighted RRF
+
+An 84-configuration development-only sweep selected:
+
+```text
+RRF k = 5
+dense weight = 1.00
+lexical weight = 1.25
+candidate multiplier = 2
+```
+
+The chosen configuration prioritised a zero-regression development diagnostic over the absolute highest aggregate score.
+
+Hybrid development improvement:
+
+```text
+P@5      0.3500 → 0.3833
+Recall   0.5903 → 0.6736
+MRR      0.5306 → 0.5750
+nDCG     0.4951 → 0.5619
+```
+
+#### Reranker pool diagnosis
+
+The first attempt to reduce reranking depth changed one shared pool size from 20 to 10.
+
+That also reduced nested Dense/BM25 candidate depth from 40 to 20, so the implementation did not match the offline experiment.
+
+This intermediate configuration was retained as a documented degradation/architecture lesson.
+
+#### Candidate/rerank depth decoupling
+
+Final configuration:
+
+```text
+candidate_pool_size = 20
+rerank_pool_size    = 10
+```
+
+Resulting path:
+
+```text
+Dense 40 + BM25 40
+      ↓
+weighted RRF
+      ↓
+Hybrid 20
+      ↓
+CrossEncoder scores top 10
+      ↓
+final top 5
+```
+
+Final development reranked result:
+
+```text
+P@5      0.3833
+Recall   0.7153
+MRR      0.6903
+nDCG     0.5987
+```
+
+Relative to the initial expanded reranker:
+
+```text
+P@5      +21.1%
+Recall   +27.2%
+MRR      +15.9%
+nDCG     +24.7%
+```
+
+### 13.9 Frozen Holdout Evaluation ✅
+
+The final six-query holdout was evaluated only after freezing retrieval configuration.
+
+| Mode | P@5 | Recall@5 | MRR | nDCG@5 |
+|---|---:|---:|---:|---:|
+| Dense | 0.4000 | 0.7667 | 0.4778 | 0.4806 |
+| Lexical | 0.3667 | 0.6917 | 0.6806 | 0.5083 |
+| Hybrid | 0.3667 | 0.6917 | 0.6667 | 0.5397 |
+| **Hybrid + Reranking** | **0.4667** | **0.8500** | **0.9167** | **0.7284** |
+
+Holdout `Hybrid → Hybrid + Reranking` outcomes:
+
+```text
+4 improvements
+1 no change
+1 degradation
+```
+
+The Natural Questions degradation remains a frozen failure case and is not used for post-hoc parameter tuning.
+
+### 13.10 Documentation ✅
+
+- final retrieval architecture recorded
+- initial, intermediate, and final development runs retained
+- holdout result retained
+- full Phase 13 technical narrative documented
+- failure cases and claim boundaries documented
+- project-story source bank added for future public write-ups
 
 ---
 
-## Phase 14 — Research Features
+## Phase 14 — Research Features ← NEXT
 
 Potential:
 
-- summaries
+- structured paper summaries
 - methodology extraction
-- findings
-- limitations
-- cross-paper comparisons
+- findings extraction
+- limitations extraction
+- cross-paper comparison
 - evidence tables
 - research-gap analysis
 - multi-document synthesis
+
+Phase 14 should build on the now-measured retrieval stack rather than changing retrieval parameters using the opened holdout.
 
 ---
 
@@ -468,13 +543,14 @@ Potential:
 
 Potential outputs:
 
-- retrieval benchmark
-- RAG evaluation report
+- expanded retrieval benchmark
+- RAG answer evaluation report
+- abstention benchmark
+- citation-support benchmark
 - latency/resource measurements
 - architecture diagrams
 - experiment tables
-- trade-offs
-- limitations
+- trade-offs and failure analysis
 - reproducibility instructions
 
 ---
@@ -495,8 +571,8 @@ Phase 9   API                     ✅
 Phase 10  Frontend                ✅
 Phase 11  Hybrid Retrieval        ✅
 Phase 12  Reranking               ✅
-Phase 13  Evaluation              ← NEXT
-Phase 14  Research Features
+Phase 13  Evaluation              ✅
+Phase 14  Research Features       ← NEXT
 Phase 15  Observability
 Phase 16  Containerisation
 Phase 17  Demo / Deployment

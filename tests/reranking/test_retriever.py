@@ -167,6 +167,8 @@ def test_default_reranking_config() -> None:
 
     assert config.candidate_pool_size == 20
 
+    assert config.rerank_pool_size == 10
+
 
 def test_reranking_config_rejects_invalid_pool_size() -> None:
     with pytest.raises(ValueError):
@@ -246,7 +248,7 @@ def test_custom_candidate_pool_is_forwarded() -> None:
         retriever=base,
         reranker=reranker,
         config=RerankingConfig(
-            candidate_pool_size=10,
+            candidate_pool_size=15,
         ),
     )
 
@@ -259,7 +261,7 @@ def test_custom_candidate_pool_is_forwarded() -> None:
 
     _, config = base.calls[0]
 
-    assert config.top_k == 10
+    assert config.top_k == 15
 
 
 def test_candidate_pool_never_drops_below_final_top_k() -> None:
@@ -333,40 +335,6 @@ def test_score_threshold_is_preserved_for_wrapped_retriever() -> None:
     assert config.score_threshold == 0.5
 
 
-def test_candidates_are_forwarded_to_reranker() -> None:
-    candidates = make_candidates(20)
-
-    base = FakeRetriever(candidates)
-
-    reranker = FakeReranker()
-
-    retriever = RerankingRetriever(
-        retriever=base,
-        reranker=reranker,
-    )
-
-    retriever.retrieve(
-        "attention",
-        RetrievalConfig(
-            top_k=5,
-        ),
-    )
-
-    assert len(reranker.calls) == 1
-
-    (
-        query,
-        forwarded_candidates,
-        top_k,
-    ) = reranker.calls[0]
-
-    assert query == "attention"
-
-    assert forwarded_candidates == candidates
-
-    assert top_k == 5
-
-
 def test_final_result_comes_from_reranker() -> None:
     base = FakeRetriever(make_candidates(20))
 
@@ -385,9 +353,9 @@ def test_final_result_comes_from_reranker() -> None:
     )
 
     assert [result.chunk.chunk_id for result in results] == [
-        "chunk-20",
-        "chunk-19",
-        "chunk-18",
+        "chunk-10",
+        "chunk-9",
+        "chunk-8",
     ]
 
     assert [result.rank for result in results] == [
@@ -471,3 +439,124 @@ def test_original_retrieval_config_is_not_mutated() -> None:
     assert original_config.top_k == 5
 
     assert original_config.document_id == DOCUMENT_ID
+
+
+def test_reranking_config_rejects_invalid_rerank_pool_size() -> None:
+    with pytest.raises(ValueError):
+        RerankingConfig(rerank_pool_size=0)
+
+
+def test_rerank_pool_cannot_exceed_candidate_pool() -> None:
+    with pytest.raises(
+        ValueError,
+        match=("rerank_pool_size cannot exceed candidate_pool_size"),
+    ):
+        RerankingConfig(
+            candidate_pool_size=10,
+            rerank_pool_size=11,
+        )
+
+
+def test_custom_rerank_pool_is_forwarded() -> None:
+    candidates = make_candidates(20)
+
+    base = FakeRetriever(candidates)
+
+    reranker = FakeReranker()
+
+    retriever = RerankingRetriever(
+        retriever=base,
+        reranker=reranker,
+        config=RerankingConfig(
+            candidate_pool_size=20,
+            rerank_pool_size=6,
+        ),
+    )
+
+    retriever.retrieve(
+        "attention",
+        RetrievalConfig(
+            top_k=5,
+        ),
+    )
+
+    assert len(reranker.calls) == 1
+
+    (
+        _,
+        forwarded_candidates,
+        top_k,
+    ) = reranker.calls[0]
+
+    assert forwarded_candidates == candidates[:6]
+
+    assert top_k == 5
+
+
+def test_candidates_are_forwarded_to_reranker() -> None:
+    candidates = make_candidates(20)
+
+    base = FakeRetriever(candidates)
+
+    reranker = FakeReranker()
+
+    retriever = RerankingRetriever(
+        retriever=base,
+        reranker=reranker,
+    )
+
+    retriever.retrieve(
+        "attention",
+        RetrievalConfig(
+            top_k=5,
+        ),
+    )
+
+    assert len(base.calls) == 1
+    assert len(reranker.calls) == 1
+
+    _, base_config = base.calls[0]
+
+    assert base_config.top_k == 20
+
+    (
+        query,
+        forwarded_candidates,
+        top_k,
+    ) = reranker.calls[0]
+
+    assert query == "attention"
+
+    assert forwarded_candidates == candidates[:10]
+
+    assert top_k == 5
+
+
+def test_rerank_pool_never_drops_below_final_top_k() -> None:
+    candidates = make_candidates(30)
+
+    base = FakeRetriever(candidates)
+
+    reranker = FakeReranker()
+
+    retriever = RerankingRetriever(
+        retriever=base,
+        reranker=reranker,
+    )
+
+    retriever.retrieve(
+        "attention",
+        RetrievalConfig(
+            top_k=12,
+        ),
+    )
+
+    (
+        _,
+        forwarded_candidates,
+        top_k,
+    ) = reranker.calls[0]
+
+    assert len(forwarded_candidates) == 12
+
+    assert top_k == 12

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The retrieval layer converts natural-language queries into ranked source evidence.
+The retrieval layer converts natural-language queries into ranked source evidence while preserving original document, page, chunk, and text provenance.
 
 The system currently supports:
 
@@ -10,13 +10,14 @@ The system currently supports:
 dense
 lexical
 hybrid
+hybrid_reranked
 ```
 
-Each strategy returns the same typed `RetrievalResult` and preserves original document provenance.
+Every strategy returns the same typed `RetrievalResult`, so downstream RAG and citation logic remain independent from retrieval implementation.
 
 ---
 
-## Common Retrieval Contract
+# Common Retrieval Contract
 
 ```text
 query
@@ -35,8 +36,6 @@ rank
 score
 DocumentChunk
 ```
-
-This keeps downstream RAG and citation logic independent from retrieval strategy.
 
 ---
 
@@ -60,27 +59,21 @@ Current embedding model:
 
 ```text
 BAAI/bge-small-en-v1.5
-```
-
-Embedding dimension:
-
-```text
-384
+384 dimensions
+normalised vectors
 ```
 
 Dense retrieval is useful for conceptual similarity, paraphrases, and semantically related wording.
 
-Dense remains the default strategy.
+Dense remains the default strategy for backward compatibility.
 
----
-
-## Dense Scores
+## Dense scores
 
 Dense retrieval returns cosine similarity.
 
-The project does not define one global default similarity threshold.
+The project does not define one global similarity threshold. Threshold usefulness depends on the embedding model, corpus, query distribution, chunking strategy, and retrieval objective.
 
-Threshold usefulness depends on the embedding model, corpus, query distribution, chunking strategy, and retrieval objective.
+`score_threshold` is therefore supported only for Dense retrieval.
 
 ---
 
@@ -98,42 +91,24 @@ Persisted Chunk Corpus
 RetrievalResult[]
 ```
 
-Current baseline:
+Current BM25 baseline:
 
 ```text
 k1 = 1.5
-b = 0.75
+b  = 0.75
 ```
 
 The implementation uses a lightweight Unicode-aware tokenizer with case normalisation.
 
-The current baseline does not yet introduce stemming, learned sparse vectors, query expansion, or phrase retrieval.
+BM25 provides a complementary signal when retrieval depends strongly on exact lexical identity, including model names, acronyms, algorithms, dataset names, equations, rare identifiers, and technical phrases.
 
----
-
-## Why Lexical Retrieval
-
-Dense retrieval may be weaker when retrieval depends strongly on exact lexical identity.
-
-Examples include:
-
-```text
-dataset names
-model names
-acronyms
-algorithm names
-equations
-rare identifiers
-technical phrases
-```
-
-BM25 provides a complementary retrieval signal for these cases.
+The current lexical baseline does not yet include stemming, phrase-aware retrieval, query expansion, or learned sparse vectors.
 
 ---
 
 # Shared Qdrant Corpus
 
-Lexical retrieval uses the same persisted chunks already stored in Qdrant.
+Lexical retrieval enumerates the same persisted `DocumentChunk` objects already stored in Qdrant.
 
 ```text
 QdrantVectorStore
@@ -145,25 +120,31 @@ QdrantVectorStore
     └── lexical chunk enumeration
 ```
 
-`ChunkCorpus` remains separate from the core vector-store protocol.
+`ChunkCorpus` remains separate from the core dense `VectorStore` protocol.
 
 ---
 
-# Reciprocal Rank Fusion
+# Weighted Reciprocal Rank Fusion
 
-Dense cosine similarity and BM25 relevance scores use different numerical scales.
+Dense cosine similarity and BM25 relevance scores use incompatible numerical scales.
 
-Hybrid retrieval therefore uses rank rather than raw score magnitude.
+Hybrid retrieval therefore fuses **ranks**, not raw score magnitudes.
 
-```text
-RRF(d) = Σ 1 / (k + rank_i(d))
-```
-
-Current baseline:
+The generic fusion function supports weighted RRF:
 
 ```text
-k = 60
+RRF(d) = Σ w_i / (k + rank_i(d))
 ```
+
+The generic `RRFConfig` keeps a conventional default rank constant for reusable equal-weight fusion, while the production Hybrid configuration supplies the Phase 13 tuned settings:
+
+```text
+Hybrid RRF k = 5
+Dense weight = 1.00
+Lexical weight = 1.25
+```
+
+This separation keeps the generic fusion primitive backward-compatible while allowing the Hybrid retriever to own retrieval-specific tuning.
 
 ---
 
@@ -172,42 +153,94 @@ k = 60
 ```text
                  Query
                    │
-        ┌──────────┴──────────┐
-        ▼                     ▼
- Dense Retriever        BM25 Retriever
-        │                     │
-        ▼                     ▼
- Dense Ranking          Lexical Ranking
-        │                     │
-        └──────────┬──────────┘
+         ┌─────────┴─────────┐
+         ▼                   ▼
+  Dense Retriever       BM25 Retriever
+         │                   │
+         ▼                   ▼
+   Dense Ranking       Lexical Ranking
+         │                   │
+         └─────────┬─────────┘
                    ▼
-                  RRF
+            Weighted RRF
                    │
                    ▼
-          RetrievalResult[]
+           RetrievalResult[]
 ```
 
-The hybrid retriever depends only on the `Retriever` protocol.
+The Hybrid retriever depends only on the shared `Retriever` protocol.
 
----
+## Candidate expansion
 
-## Candidate Expansion
-
-Current baseline:
+Current configuration:
 
 ```text
 candidate_multiplier = 2
 ```
 
-With:
+For a normal standalone Hybrid request with:
 
 ```text
 top_k = 5
 ```
 
-the hybrid retriever requests up to 10 dense and 10 lexical candidates before final fusion.
+Hybrid asks each branch for:
 
-The multiplier is not claimed to be optimal.
+```text
+Dense top 10
+BM25 top 10
+```
+
+before fusion and final top-5 selection.
+
+Candidate expansion is different when Hybrid is wrapped by the reranking pipeline; that nested path is described below.
+
+---
+
+# Cross-Encoder Reranking
+
+`hybrid_reranked` is a second-stage retrieval mode.
+
+The final Phase 13 architecture deliberately separates two depth controls:
+
+```text
+candidate_pool_size = 20
+rerank_pool_size    = 10
+```
+
+Their meanings are different:
+
+```text
+candidate_pool_size
+→ how many Hybrid results the reranking wrapper asks the first-stage retriever to produce
+
+rerank_pool_size
+→ how many of those strongest Hybrid results are sent to the cross-encoder
+```
+
+For the default final top-5 request:
+
+```text
+RerankingRetriever requests Hybrid top 20
+                 ↓
+Hybrid candidate_multiplier = 2
+                 ↓
+Dense top 40 + BM25 top 40
+                 ↓
+weighted RRF
+                 ↓
+Hybrid top 20
+                 ↓
+keep Hybrid ranks 1–10
+                 ↓
+cross-encoder/ms-marco-MiniLM-L6-v2
+                 ↓
+final top 5
+```
+
+This design was introduced after a Phase 13 experiment showed that using one parameter for both depths changed first-stage candidate generation when the intention was only to restrict cross-encoder scoring.
+
+The cross-encoder uses query-passage pairs and returns a relevance score. The final score is not a calibrated probability.
 
 ---
 
@@ -219,13 +252,14 @@ Available modes:
 dense
 lexical
 hybrid
+hybrid_reranked
 ```
 
 `RetrievalRouter` chooses the configured strategy.
 
-Dense remains the default for backward compatibility.
-
 The same router is used by both `ResearchService` and `RAGService`.
+
+Dense remains the default for backward compatibility.
 
 ---
 
@@ -249,6 +283,8 @@ document_id
 one indexed document
 ```
 
+Phase 13 formal evaluation uses document-scoped queries so the benchmark tests evidence ranking rather than ambiguity about which paper is being referenced.
+
 ---
 
 # Score Semantics
@@ -261,87 +297,119 @@ lexical
 → BM25 relevance
 
 hybrid
-→ RRF score
+→ weighted RRF score
+
+hybrid_reranked
+→ cross-encoder relevance score
 ```
 
-Those scores must not be compared numerically across modes.
+These scores must not be compared numerically across modes.
+
+`score_threshold` remains dense-only.
 
 ---
 
-## Score Thresholds
+# Historical Phase 11 Comparison
 
-`score_threshold` is supported only for dense retrieval.
-
-```text
-dense cosine threshold
-≠
-BM25 threshold
-≠
-RRF threshold
-```
-
----
-
-# Phase 11 Comparison
-
-A six-query smoke comparison was run using:
+The initial six-query smoke comparison showed complementary candidate sets:
 
 ```text
-top_k = 5
-scope = all indexed documents
-
-dense
-lexical
-hybrid
-```
-
-Average top-five Jaccard overlap:
-
-```text
-Dense ↔ Lexical    ≈ 0.214
+Dense ↔ Lexical    ≈ 0.214 top-5 Jaccard
 Dense ↔ Hybrid     ≈ 0.478
 Lexical ↔ Hybrid   ≈ 0.507
 ```
 
-The result demonstrates that dense and lexical retrieval provide materially different candidate signals.
+For `Adam optimizer`, Dense ranked a bibliography passage first while BM25 and Hybrid promoted the actual optimizer-method passage.
+
+This established behavioural complementarity, not formal superiority.
 
 ---
 
-## Exact-Term Example
+# Phase 13 Formal Evaluation
 
-For:
-
-```text
-Adam optimizer
-```
-
-dense retrieval ranked a bibliography passage first.
-
-The actual optimizer-method passage appeared second.
-
-BM25 and hybrid retrieval promoted the method passage to rank one.
-
----
-
-## Semantic Example
-
-For:
+The expanded benchmark uses:
 
 ```text
-Why can the model process sequence positions in parallel?
+3 papers
+18 document-scoped queries
+12 development
+6 holdout
+527 graded judgments
+0–3 relevance scale
+binary relevance >= 2
+top_k = 5
 ```
 
-dense retrieval returned the Transformer discussion explaining the sequential limitation of recurrence and the greater parallelisation enabled by attention.
+The labels were created through a model-assisted blind review process. Recall is pooled recall rather than exhaustive corpus recall.
 
-This demonstrates why semantic retrieval remains important.
+## Initial development result
+
+| Mode | P@5 | Recall@5 | MRR | nDCG@5 |
+|---|---:|---:|---:|---:|
+| Dense | 0.2500 | 0.4514 | 0.5556 | 0.4551 |
+| Lexical | 0.3667 | 0.6319 | 0.7222 | 0.6264 |
+| Hybrid | 0.3500 | 0.5903 | 0.5306 | 0.4951 |
+| Hybrid + Reranking | 0.3167 | 0.5625 | 0.5958 | 0.4801 |
+
+The important finding was that BM25 initially outperformed the more complex modes on the development benchmark.
+
+## Tuned Hybrid
+
+An 84-configuration development-only RRF sweep selected:
+
+```text
+k = 5
+dense weight = 1.00
+lexical weight = 1.25
+```
+
+The selection prioritised a no-regression development profile rather than the single highest aggregate nDCG configuration.
+
+Final Hybrid development metrics:
+
+```text
+P@5      0.3833
+Recall   0.6736
+MRR      0.5750
+nDCG     0.5619
+```
+
+## Final reranked development metrics
+
+After separating candidate generation depth from rerank depth:
+
+```text
+P@5      0.3833
+Recall   0.7153
+MRR      0.6903
+nDCG     0.5987
+```
+
+Compared with the initial development reranker, the final configuration improved P@5 by 21.1%, Recall@5 by 27.2%, MRR by 15.9%, and nDCG@5 by 24.7%.
+
+## Frozen holdout
+
+The final six-query holdout result was:
+
+| Mode | P@5 | Recall@5 | MRR | nDCG@5 |
+|---|---:|---:|---:|---:|
+| Dense | 0.4000 | 0.7667 | 0.4778 | 0.4806 |
+| Lexical | 0.3667 | 0.6917 | 0.6806 | 0.5083 |
+| Hybrid | 0.3667 | 0.6917 | 0.6667 | 0.5397 |
+| **Hybrid + Reranking** | **0.4667** | **0.8500** | **0.9167** | **0.7284** |
+
+Reranking improved four holdout queries, left one unchanged, and degraded one relative to Hybrid.
+
+The main holdout degradation was the GPT-2 Natural Questions query, where the cross-encoder retained a partially relevant result but dropped the passage containing the full 4.1% exact-match result from the final top five.
+
+See `docs/phase13-evaluation.md` for the full experiment sequence.
 
 ---
 
 # Current Limitations
 
-The retrieval system does not yet include:
+The retrieval system still does not include:
 
-- cross-encoder reranking
 - learned sparse retrieval
 - phrase-aware lexical retrieval
 - stemming
@@ -351,11 +419,12 @@ The retrieval system does not yet include:
 - parent-child retrieval
 - metadata filtering beyond document identity
 - diversity-aware retrieval
-- empirically tuned BM25 parameters
-- empirically tuned RRF parameters
-- labelled retrieval evaluation
+- tuned BM25 parameters
+- large-scale multi-corpus benchmark coverage
+- exhaustive relevance annotation
+- negative-query/abstention evaluation
 
-The BM25 baseline can also score chunks containing only some terms from a multi-term query.
+The current benchmark is small, uses pooled relevance judgments, and should not be used to claim universal parameter optimality.
 
 ---
 
@@ -363,60 +432,27 @@ The BM25 baseline can also score chunks containing only some terms from a multi-
 
 Tests cover:
 
-- dense query validation
-- dense top-k handling
+- dense query validation and top-k handling
 - document filtering
-- BM25 lexical ranking
-- lexical tokenisation
+- BM25 lexical ranking and tokenisation
 - empty corpus handling
-- RRF mathematics
-- deterministic fusion
+- RRF mathematics and deterministic fusion
+- weighted-RRF validation
 - duplicate detection
-- hybrid candidate expansion
+- Hybrid candidate expansion
+- reranking candidate depth
+- separate rerank depth
+- nested branch expansion
+- cross-encoder ordering
 - router strategy selection
 - Qdrant chunk-corpus enumeration
 - API retrieval-mode propagation
+- evaluation metrics, aggregation, splits, and diagnostics
 
 ---
 
-# Evaluation Direction
+# Next Evaluation Directions
 
-Formal labelled retrieval evaluation will use:
+Retrieval evaluation should now expand to new data rather than continue tuning the same development set.
 
-```text
-Recall@K
-Precision@K
-MRR
-nDCG
-```
-
-Future comparisons will include:
-
-```text
-Dense
-Lexical
-Hybrid
-Hybrid + Reranking
-```
-
----
-
-# Next Step
-
-Phase 12 introduces reranking.
-
-```text
-Dense Retrieval
-       +
-BM25 Retrieval
-       ↓
-      RRF
-       ↓
-Candidate Set
-       ↓
-Cross-Encoder
-       ↓
-Reranked Evidence
-```
-
-The Phase 11 baseline should remain frozen during the first reranking experiments.
+Useful next comparisons include larger corpora, negative queries, BM25 preprocessing variants, chunking variants, embedding models, learned sparse retrieval, and latency/resource benchmarking.

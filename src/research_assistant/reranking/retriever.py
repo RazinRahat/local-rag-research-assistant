@@ -14,7 +14,7 @@ from research_assistant.retrieval.models import (
 
 
 class RerankingRetriever:
-    """Retrieve a candidate pool and rerank it."""
+    """Retrieve a candidate pool and rerank its strongest subset."""
 
     def __init__(
         self,
@@ -31,7 +31,10 @@ class RerankingRetriever:
         self,
         query: str,
         config: RetrievalConfig | None = None,
-    ) -> tuple[RetrievalResult, ...]:
+    ) -> tuple[
+        RetrievalResult,
+        ...,
+    ]:
         """Retrieve candidates and apply second-stage reranking."""
 
         clean_query = query.strip()
@@ -48,7 +51,7 @@ class RerankingRetriever:
 
         candidate_config = retrieval_config.model_copy(
             update={
-                "top_k": candidate_top_k,
+                "top_k": (candidate_top_k),
             }
         )
 
@@ -60,8 +63,15 @@ class RerankingRetriever:
         if not candidates:
             return ()
 
+        rerank_candidate_count = max(
+            retrieval_config.top_k,
+            self._config.rerank_pool_size,
+        )
+
+        rerank_candidates = candidates[:rerank_candidate_count]
+
         return self._reranker.rerank(
             clean_query,
-            candidates,
-            top_k=retrieval_config.top_k,
+            rerank_candidates,
+            top_k=(retrieval_config.top_k),
         )

@@ -109,7 +109,11 @@ def test_hybrid_configuration_defaults() -> None:
 
     assert config.candidate_multiplier == 2
 
-    assert config.rrf_config.rank_constant == 60
+    assert config.rrf_config.rank_constant == 5
+
+    assert config.dense_weight == 1.0
+
+    assert config.lexical_weight == 1.25
 
 
 def test_hybrid_configuration_rejects_invalid_candidate_multiplier() -> None:
@@ -271,6 +275,10 @@ def test_hybrid_rewards_dense_and_lexical_consensus() -> None:
     retriever = HybridRetriever(
         dense_retriever=dense,
         lexical_retriever=lexical,
+        config=HybridConfig(
+            dense_weight=1.0,
+            lexical_weight=1.0,
+        ),
     )
 
     results = retriever.retrieve(
@@ -459,9 +467,102 @@ def test_hybrid_uses_configured_rrf_constant() -> None:
     retriever = HybridRetriever(
         dense_retriever=dense,
         lexical_retriever=lexical,
-        config=HybridConfig(rrf_config=RRFConfig(rank_constant=10)),
+        config=HybridConfig(
+            rrf_config=RRFConfig(
+                rank_constant=10,
+            ),
+            dense_weight=1.0,
+            lexical_weight=1.0,
+        ),
     )
 
     results = retriever.retrieve("attention")
 
     assert results[0].score == pytest.approx(2 / 11)
+
+
+@pytest.mark.parametrize(
+    "weight",
+    (
+        0.0,
+        -1.0,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ),
+)
+def test_hybrid_rejects_invalid_dense_weight(
+    weight: float,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match="dense_weight",
+    ):
+        HybridConfig(
+            dense_weight=weight,
+        )
+
+
+@pytest.mark.parametrize(
+    "weight",
+    (
+        0.0,
+        -1.0,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ),
+)
+def test_hybrid_rejects_invalid_lexical_weight(
+    weight: float,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match="lexical_weight",
+    ):
+        HybridConfig(
+            lexical_weight=weight,
+        )
+
+
+def test_hybrid_uses_configured_branch_weights() -> None:
+    shared = make_chunk(
+        chunk_id="shared",
+        chunk_index=0,
+    )
+
+    dense = FakeRetriever(
+        (
+            make_result(
+                rank=1,
+                chunk=shared,
+                score=0.9,
+            ),
+        )
+    )
+
+    lexical = FakeRetriever(
+        (
+            make_result(
+                rank=1,
+                chunk=shared,
+                score=10.0,
+            ),
+        )
+    )
+
+    retriever = HybridRetriever(
+        dense_retriever=dense,
+        lexical_retriever=lexical,
+        config=HybridConfig(
+            rrf_config=RRFConfig(
+                rank_constant=5,
+            ),
+            dense_weight=1.0,
+            lexical_weight=1.25,
+        ),
+    )
+
+    results = retriever.retrieve("attention")
+
+    assert results[0].score == pytest.approx(2.25 / 6)

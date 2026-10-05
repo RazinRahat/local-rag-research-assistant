@@ -1,0 +1,38 @@
+{
+  "experiment": "phase13_reranker_candidate_pool_sweep",
+  "holdout_used": false,
+  "development_query_count": 12,
+  "current_candidate_pool_size": 20,
+  "recommended_candidate_pool_size": 10,
+  "current_reranked_aggregate": {
+    "precision_at_5": 0.3333333333333333,
+    "recall_at_5": 0.6041666666666666,
+    "mrr": 0.6791666666666667,
+    "ndcg_at_5": 0.531182159745765
+  },
+  "standalone_hybrid_aggregate": {
+    "precision_at_5": 0.3833333333333333,
+    "recall_at_5": 0.6736111111111112,
+    "mrr": 0.5750000000000001,
+    "ndcg_at_5": 0.5618811993507483
+  },
+  "recommended_aggregate": {
+    "precision_at_5": 0.3833333333333333,
+    "recall_at_5": 0.7152777777777778,
+    "mrr": 0.6902777777777778,
+    "ndcg_at_5": 0.5987214710858597
+  },
+  "recommended_outcomes_vs_current_reranker": {
+    "improvements": 5,
+    "degradations": 0,
+    "mixed": 0,
+    "no_change": 7
+  },
+  "notes": [
+    "Only dev_* queries were used.",
+    "All Hybrid and Hybrid+Reranked top-20 chunks in the new trace already had qrels.",
+    "Simulation restricts the existing cross-encoder ranking to the first N Hybrid candidates.",
+    "Cross-encoder pair scores are independent per query-passage pair, so restricting the candidate set preserves their relative score ordering.",
+    "Pool size 10 was selected because it improves all aggregate metrics over pool size 20 and causes zero diagnostic regressions relative to the current reranked mode."
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "purpose": "Phase 13 development-only retrieval trace after weighted-RRF tuning",
+  "design": {
+    "development_queries": 12,
+    "holdout_queries": 0,
+    "document_scoped": true,
+    "split_encoding": "Query IDs use dev_ and holdout_ prefixes.",
+    "holdout_policy": "Holdout queries intentionally excluded from this file."
+  },
+  "documents": [
+    {
+      "file_name": "attention_is_all_you_need.pdf",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537"
+    },
+    {
+      "file_name": "language_models_are_unsupervised_multitask_learners.pdf",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e"
+    },
+    {
+      "file_name": "2001.08361v1.pdf",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494"
+    }
+  ],
+  "queries": [
+    {
+      "id": "dev_tr_positional_encoding_why",
+      "query": "Why does the Transformer need positional encoding?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537"
+    },
+    {
+      "id": "dev_tr_scaled_dot_product",
+      "query": "Why are attention dot products divided by the square root of the key dimension?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537"
+    },
+    {
+      "id": "dev_tr_optimizer_schedule",
+      "query": "What optimizer and learning-rate schedule were used to train the Transformer?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537"
+    },
+    {
+      "id": "dev_tr_translation_results",
+      "query": "What BLEU scores did the big Transformer achieve on WMT 2014 English-German and English-French?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537"
+    },
+    {
+      "id": "dev_gpt2_webtext_construction",
+      "query": "How was the WebText training dataset constructed?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e"
+    },
+    {
+      "id": "dev_gpt2_byte_bpe",
+      "query": "Why did GPT-2 use a byte-level BPE representation and restrict merges across character categories?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e"
+    },
+    {
+      "id": "dev_gpt2_zero_shot_tasks",
+      "query": "Which tasks were used to demonstrate GPT-2's zero-shot capabilities?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e"
+    },
+    {
+      "id": "dev_gpt2_model_scale",
+      "query": "What model sizes were benchmarked, and how large was the largest GPT-2 model?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e"
+    },
+    {
+      "id": "dev_scale_primary_factors",
+      "query": "Which factors most strongly determine language-model performance according to the scaling-law study?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494"
+    },
+    {
+      "id": "dev_scale_compute_efficient_training",
+      "query": "Why does compute-efficient training favor very large models that stop well before convergence?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494"
+    },
+    {
+      "id": "dev_scale_training_procedure",
+      "query": "What optimizer, batch setup, warmup, and learning-rate schedule were used in the scaling-law experiments?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494"
+    },
+    {
+      "id": "dev_scale_webtext2_stats",
+      "query": "How large was WebText2, and which additional text distributions were used for testing?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494"
+    }
+  ]
+}

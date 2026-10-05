@@ -2,11 +2,11 @@
 
 A local-first research assistant for querying, analysing, and citing research documents using Retrieval-Augmented Generation (RAG).
 
-The project is built component by component so the mechanics behind ingestion, chunking, embeddings, retrieval, context construction, local generation, citations, hybrid search, and later evaluation remain explicit and inspectable rather than being hidden behind a high-level RAG framework.
+The project is built component by component so ingestion, chunking, embeddings, persistence, retrieval, context construction, local generation, citations, hybrid search, reranking, and evaluation remain explicit and inspectable instead of being hidden behind a high-level RAG framework.
 
 ## Current Status
 
-**Phase 12 complete — local research workspace with selectable dense, lexical, hybrid, and cross-encoder-reranked retrieval.**
+**Phase 13 complete — the retrieval stack now has relevance-labelled development and holdout evaluation, evidence-driven hybrid tuning, and a frozen cross-encoder reranking configuration.**
 
 ```text
 Research PDF
@@ -23,13 +23,15 @@ Retrieval Router
      │
      ├── Dense Retrieval
      ├── BM25 Lexical Retrieval
-     ├── Hybrid Retrieval
+     ├── Weighted Hybrid Retrieval
      │        ↓
-     │ Reciprocal Rank Fusion
+     │ Weighted Reciprocal Rank Fusion
      └── Hybrid + Reranking
               ↓
-       Cross-Encoder Reranker
-     ↓
+       Hybrid candidate pool
+              ↓
+       Cross-Encoder rerank subset
+              ↓
 Bounded Context Construction
      ↓
 Local LLM (Ollama / Qwen)
@@ -45,11 +47,9 @@ React Research Workspace
 Interactive Answer + Evidence Inspection
 ```
 
-The system can ingest and index research PDFs, preserve page and chunk provenance, retrieve evidence using multiple retrieval strategies, construct a token-bounded prompt, generate a local evidence-grounded answer, validate recognised citation identities, and allow the user to inspect the exact retrieved evidence associated with each validated source.
+The system can ingest and index research PDFs, preserve page and chunk provenance, retrieve evidence using multiple strategies, construct a token-bounded prompt, generate a local evidence-grounded answer, validate recognised citation identities, and expose the exact evidence behind each validated source.
 
-Citation identity validation does **not** yet establish claim-level semantic entailment.
-
-Formal labelled retrieval evaluation, answer-quality evaluation, abstention evaluation, and citation-support evaluation remain future work.
+Citation identity validation does **not** establish claim-level semantic entailment. Phase 13 evaluates retrieval quality; answer faithfulness, abstention quality, and claim-level citation support remain separate future evaluation tasks.
 
 ---
 
@@ -58,28 +58,28 @@ Formal labelled retrieval evaluation, answer-quality evaluation, abstention eval
 ### Document Pipeline
 
 - PDF validation using PyMuPDF
-- Page-level text extraction
+- page-level text extraction
 - PDF metadata extraction
 - SHA-256 document identity
-- Conservative text normalisation
-- Encrypted and unusable PDF detection
-- Page-level provenance preservation
-- Typed document and chunk models
-- Configurable token-aware chunking
-- Model-aligned Hugging Face tokenisation
-- Deterministic chunk identities
-- Configurable token overlap
-- Local document and query embeddings
-- Normalised BGE embeddings
-- Persistent Qdrant storage
-- Document replacement and deletion
-- Stored source text and provenance metadata
+- conservative text normalisation
+- encrypted and unusable PDF detection
+- page-level provenance preservation
+- typed document and chunk models
+- configurable token-aware chunking
+- model-aligned Hugging Face tokenisation
+- deterministic chunk identities
+- configurable token overlap
+- local document and query embeddings
+- normalised BGE embeddings
+- persistent Qdrant storage
+- document replacement and deletion
+- stored source text and provenance metadata
 
 Current chunking baseline:
 
 ```text
-chunk size:     384 tokens
-chunk overlap:   64 tokens
+chunk size:      384 tokens
+chunk overlap:    64 tokens
 ```
 
 Current embedding baseline:
@@ -94,11 +94,13 @@ BAAI/bge-small-en-v1.5
 The system exposes four retrieval strategies:
 
 ```text
-Dense
-Lexical
-Hybrid
-Hybrid + Reranking
+dense
+lexical
+hybrid
+hybrid_reranked
 ```
+
+Dense remains the backward-compatible default.
 
 #### Dense Retrieval
 
@@ -111,8 +113,6 @@ Qdrant cosine search
  ↓
 ranked chunks
 ```
-
-Dense remains the default retrieval strategy.
 
 #### Lexical Retrieval
 
@@ -137,52 +137,50 @@ b  = 0.75
 
 #### Hybrid Retrieval
 
-Hybrid retrieval combines dense and lexical rankings using Reciprocal Rank Fusion.
+Hybrid retrieval combines dense and lexical rankings with **weighted Reciprocal Rank Fusion**:
 
 ```text
-               Query
-                 │
-       ┌─────────┴─────────┐
-       ▼                   ▼
- Dense Retrieval      BM25 Retrieval
-       │                   │
-       └─────────┬─────────┘
-                 ▼
-                 RRF
-                 │
-                 ▼
-         Ranked Evidence
+score(d) = Σ w_i / (k + rank_i(d))
 ```
 
-Current hybrid baseline:
+Frozen Phase 13 configuration:
 
 ```text
-RRF rank constant:      60
-candidate multiplier:    2
-final top_k:             5
+RRF rank constant:      5
+Dense weight:           1.00
+Lexical weight:         1.25
+candidate multiplier:   2
 ```
 
-Raw cosine and BM25 scores are not averaged because they use incompatible numerical scales.
+Raw cosine and BM25 scores are not averaged because their numerical scales are not comparable.
 
 #### Cross-Encoder Reranking
 
-Phase 12 adds a second-stage reranker after hybrid retrieval.
+The frozen reranking path separates first-stage candidate depth from the number of passages scored by the cross-encoder:
 
 ```text
-Dense + BM25
-     ↓
-    RRF
-     ↓
-Top 20 Candidates
-     ↓
+Dense top 40 + BM25 top 40
+             ↓
+       weighted RRF
+             ↓
+       Hybrid top 20
+             ↓
+       keep top 10
+             ↓
 cross-encoder/ms-marco-MiniLM-L6-v2
-     ↓
-Final Top 5
+             ↓
+        Final top 5
 ```
 
-The Phase 11 `hybrid` mode remains unchanged as a control.
+Current reranking configuration:
 
-The new `hybrid_reranked` mode uses the cross-encoder relevance score for the final ranking. These scores are not calibrated probabilities and are not numerically comparable with cosine, BM25, or RRF scores.
+```text
+candidate_pool_size = 20
+rerank_pool_size    = 10
+final top_k         = 5
+```
+
+The cross-encoder score is a relevance score, not a calibrated probability, and must not be compared numerically with cosine, BM25, or RRF scores.
 
 ### Retrieval Modes
 
@@ -202,44 +200,42 @@ hybrid
 hybrid_reranked
 ```
 
-Dense remains the backward-compatible default.
-
 ### Retrieval and RAG
 
-- Dense semantic retrieval using BGE + Qdrant
+- dense semantic retrieval using BGE + Qdrant
 - BM25 lexical retrieval
-- Reciprocal Rank Fusion
-- Selectable dense, lexical, hybrid, and cross-encoder-reranked retrieval
-- Candidate expansion and second-stage reranking
-- Configurable top-k retrieval
-- Document-scoped retrieval
-- Dense-only optional cosine score thresholds
-- Typed `RetrievalResult`
-- Full chunk provenance reconstruction
-- Local Qwen generation through Ollama
-- Explicit context budgeting
-- Chat-template-aware token estimation
-- Whole-chunk evidence selection
-- Duplicate and high-overlap evidence filtering
-- Evidence-order preservation
-- Grounding instructions
-- Source-labelled evidence delimiters
-- Explicit insufficient-evidence fallback
-- Typed `RAGResponse`
-- Prompt-token diagnostics
-- Local generation diagnostics
+- weighted Reciprocal Rank Fusion
+- selectable dense, lexical, hybrid, and cross-encoder-reranked retrieval
+- separate first-stage candidate depth and rerank depth
+- configurable top-k retrieval
+- document-scoped retrieval
+- dense-only optional cosine score thresholds
+- typed `RetrievalResult`
+- full chunk provenance reconstruction
+- local Qwen generation through Ollama
+- explicit context budgeting
+- chat-template-aware token estimation
+- whole-chunk evidence selection
+- duplicate and high-overlap evidence filtering
+- evidence-order preservation
+- grounding instructions
+- source-labelled evidence delimiters
+- explicit insufficient-evidence fallback
+- typed `RAGResponse`
+- prompt-token diagnostics
+- local generation diagnostics
 
 ### Citation Integrity
 
-- Strict `[S1]`, `[S2]`, ... citation protocol
-- Citation parsing with character offsets
-- Mapping from prompt-local source IDs to trusted evidence
-- Rejection of unknown recognised source IDs
-- Rejection of missing citations in evidence-backed answers
-- Document/page/chunk provenance recovered from stored evidence
-- Generated filenames and page numbers are not trusted
-- Typed `CitedRAGResponse`
-- Interactive source inspection in the frontend
+- strict `[S1]`, `[S2]`, ... citation protocol
+- citation parsing with character offsets
+- mapping from prompt-local source IDs to trusted evidence
+- rejection of unknown recognised source IDs
+- rejection of missing citations in evidence-backed answers
+- document/page/chunk provenance recovered from stored evidence
+- generated filenames and page numbers are not trusted
+- typed `CitedRAGResponse`
+- interactive source inspection in the frontend
 
 Citation identity validation should not be confused with semantic entailment.
 
@@ -256,47 +252,15 @@ POST   /search
 POST   /query
 ```
 
-The application layer provides typed request and response models, document indexing, retrieval strategy selection, document management, cited RAG question answering, error mapping, and runtime lifecycle cleanup.
-
 ### Frontend
 
-The React research workspace provides:
-
-- indexed document listing
-- PDF upload
-- document replacement
-- document deletion
-- corpus-wide scope
-- document-specific scope
-- Ask mode
-- Search mode
-- Dense / Lexical / Hybrid / Reranked selector
-- ranked evidence cards
-- retrieval-score display
-- cited RAG answers
-- clickable validated citations
-- evidence provenance inspection
-- generation diagnostics
-- insufficient-evidence presentation
-- loading and error states
-- `Cmd/Ctrl + Enter` submission
-- stale-response protection
-
-Changing document scope or retrieval strategy invalidates older in-flight search/RAG responses.
+The React research workspace provides indexed-document management, corpus-wide and document-scoped search, Ask/Search modes, Dense/Lexical/Hybrid/Reranked selection, ranked evidence cards, cited answers, clickable validated citations, provenance inspection, diagnostics, error/empty states, keyboard submission, and stale-response protection.
 
 ---
 
-## Phase 11 Hybrid Retrieval Experiment
+## Phase 11 — Dense + Lexical Complementarity
 
-Phase 11 includes a controlled smoke comparison using the same six queries with:
-
-```text
-top_k = 5
-
-Dense
-Lexical
-Hybrid
-```
+The first controlled retrieval comparison used six whole-corpus queries and `top_k=5`.
 
 Average top-five Jaccard overlap:
 
@@ -306,73 +270,15 @@ Dense ↔ Hybrid     ≈ 0.478
 Lexical ↔ Hybrid   ≈ 0.507
 ```
 
-Top-result agreement:
+The useful finding was not that one retriever won. Dense and lexical retrieval produced materially different evidence, and RRF incorporated both signals.
 
-```text
-Dense ↔ Lexical    2 / 6
-Dense ↔ Hybrid     3 / 6
-Lexical ↔ Hybrid   4 / 6
-```
-
-The important finding is not that one retriever "won".
-
-Instead, dense and lexical retrieval produced meaningfully different candidate sets while hybrid retrieval incorporated evidence from both.
-
-### Example: `Adam optimizer`
-
-For:
-
-```text
-Adam optimizer
-```
-
-dense retrieval ranked a bibliography passage containing the Adam paper first.
-
-The actual Transformer optimizer-method section appeared second.
-
-BM25 promoted the actual optimizer section to rank 1.
-
-Hybrid retrieval also promoted that section to rank 1.
-
-This is a concrete example of lexical retrieval complementing semantic retrieval.
-
-### Important Claim Boundary
-
-The six-query experiment demonstrates retrieval behaviour and complementarity.
-
-It does **not** establish that hybrid retrieval has higher retrieval accuracy.
-
-Formal labelled evaluation will be introduced later using metrics such as:
-
-```text
-Recall@K
-Precision@K
-MRR
-nDCG
-```
-
-See:
-
-- [Hybrid Retrieval](docs/hybrid-retrieval.md)
-- [Experiments](docs/experiments.md)
+For `Adam optimizer`, dense retrieval ranked a bibliography passage first while BM25 promoted the actual Transformer optimizer-method passage. This established complementarity, not formal accuracy superiority.
 
 ---
 
-## Phase 12 Cross-Encoder Reranking Experiment
+## Phase 12 — Cross-Encoder Behaviour
 
-Phase 12 reused the same six-query set to compare the frozen hybrid baseline against `hybrid_reranked`.
-
-Configuration:
-
-```text
-top_k = 5
-repeats = 3
-warm-up = enabled
-candidate pool = 20
-cross-encoder = cross-encoder/ms-marco-MiniLM-L6-v2
-```
-
-Measured:
+A six-query comparison added `cross-encoder/ms-marco-MiniLM-L6-v2` after Hybrid retrieval.
 
 ```text
 Mean top-5 Jaccard overlap:   ≈ 0.409
@@ -382,14 +288,113 @@ Reranked median latency:      ≈ 108.9 ms
 Added end-to-end latency:     ≈ 73.8 ms
 ```
 
-The reranker produced useful semantic promotions on some explanatory queries, but also clear regressions on others. For example, it promoted the direct recurrence/parallelisation explanation for a semantic paraphrase, while the short query `Adam optimizer` caused it to over-promote a less useful scaling-law passage.
+The reranker made useful semantic promotions but also clear regressions. Phase 12 therefore established integration and behaviour, not higher retrieval accuracy.
 
-Phase 12 therefore establishes reranking behaviour and integration, not higher retrieval accuracy.
+---
 
-See:
+## Phase 13 — Formal Retrieval Evaluation
 
-- [Cross-Encoder Reranking](docs/reranking.md)
-- [Experiments](docs/experiments.md)
+Phase 13 converted the earlier qualitative comparisons into a relevance-labelled benchmark.
+
+Benchmark design:
+
+```text
+papers:                 3
+queries:                18 document-scoped
+  development:          12
+  holdout:               6
+relevance judgments:   527
+relevance scale:         0–3
+binary relevance:       grade >= 2
+evaluation top_k:        5
+```
+
+The relevance review was **model-assisted and blind to system identity/rank**. It should not be described as an independently human-labelled gold standard. Recall is pooled recall because qrels were created from pooled retrieved candidates rather than exhaustive corpus annotation.
+
+### Initial expanded development benchmark
+
+| Mode | P@5 | Recall@5 | MRR | nDCG@5 |
+|---|---:|---:|---:|---:|
+| Dense | 0.2500 | 0.4514 | 0.5556 | 0.4551 |
+| Lexical | 0.3667 | 0.6319 | 0.7222 | 0.6264 |
+| Hybrid | 0.3500 | 0.5903 | 0.5306 | 0.4951 |
+| Hybrid + Reranking | 0.3167 | 0.5625 | 0.5958 | 0.4801 |
+
+The result was important because the more complex pipelines were **not automatically better**. BM25 was the strongest aggregate development baseline.
+
+### Evidence-driven Hybrid tuning
+
+An offline development-only sweep evaluated 84 weighted-RRF configurations. The absolute best aggregate configuration was rejected because it introduced several query-level regressions. The selected configuration instead prioritised a zero-regression development profile:
+
+```text
+k = 5
+dense weight = 1.00
+lexical weight = 1.25
+candidate multiplier = 2
+```
+
+It improved Hybrid development metrics to:
+
+| Metric | Before | After | Relative change |
+|---|---:|---:|---:|
+| P@5 | 0.3500 | 0.3833 | +9.5% |
+| Recall@5 | 0.5903 | 0.6736 | +14.1% |
+| MRR | 0.5306 | 0.5750 | +8.4% |
+| nDCG@5 | 0.4951 | 0.5619 | +13.5% |
+
+The production implementation reproduced the offline prediction exactly.
+
+### Reranking lesson: one parameter was controlling two depths
+
+The first reranker experiment suggested that scoring only the strongest 10 Hybrid candidates could improve quality. A direct implementation changed `candidate_pool_size` from 20 to 10. That improved aggregate results, but it also silently reduced the nested Dense/BM25 branch depth from 40 to 20.
+
+That meant the code was no longer testing the same architecture as the offline experiment.
+
+The fix was to separate:
+
+```text
+candidate_pool_size = 20   # Hybrid candidate generation depth
+rerank_pool_size    = 10   # Cross-encoder scoring depth
+```
+
+This preserved deep first-stage retrieval while limiting the cross-encoder to the strongest Hybrid subset.
+
+### Final development result
+
+| Mode | P@5 | Recall@5 | MRR | nDCG@5 |
+|---|---:|---:|---:|---:|
+| Dense | 0.2500 | 0.4514 | 0.5556 | 0.4551 |
+| Lexical | 0.3667 | 0.6319 | **0.7222** | **0.6264** |
+| Hybrid | **0.3833** | 0.6736 | 0.5750 | 0.5619 |
+| Hybrid + Reranking | **0.3833** | **0.7153** | 0.6903 | 0.5987 |
+
+Relative to the initial expanded development reranker, the final reranked pipeline improved:
+
+```text
+P@5      +21.1%
+Recall   +27.2%
+MRR      +15.9%
+nDCG     +24.7%
+```
+
+Lexical retrieval still had the highest development MRR and nDCG. That trade-off is retained rather than tuned away.
+
+### Frozen holdout result
+
+After the development configuration was frozen, the six holdout queries were evaluated once without further parameter tuning.
+
+| Mode | P@5 | Recall@5 | MRR | nDCG@5 |
+|---|---:|---:|---:|---:|
+| Dense | 0.4000 | 0.7667 | 0.4778 | 0.4806 |
+| Lexical | 0.3667 | 0.6917 | 0.6806 | 0.5083 |
+| Hybrid | 0.3667 | 0.6917 | 0.6667 | 0.5397 |
+| **Hybrid + Reranking** | **0.4667** | **0.8500** | **0.9167** | **0.7284** |
+
+On this small frozen holdout, Hybrid + Reranking was best on all four aggregate metrics. Across the six holdout queries, reranking produced four improvements, one unchanged result, and one degradation relative to Hybrid.
+
+The degradation matters: on the GPT-2 Natural Questions query, Hybrid retrieved both relevant passages, but the cross-encoder dropped the passage containing the complete 4.1% exact-match result from the final top five. This remains a documented failure case rather than a reason to tune on the holdout.
+
+See [Phase 13 Evaluation](docs/phase13-evaluation.md) and [Experiments](docs/experiments.md) for the full sequence, including failed experiments and claim boundaries.
 
 ---
 
@@ -402,43 +407,47 @@ See:
                          React Workspace
                                 │
                                 ▼
-                             FastAPI
+                              FastAPI
                                 │
                                 ▼
-                        ResearchService
+                         ResearchService
                                 │
-                 ┌──────────────┴──────────────┐
-                 │                             │
-                 ▼                             ▼
-            Document Pipeline             RetrievalRouter
-                 │                             │
-                 ▼             ┌─────────┬─────────┬──────────┬──────────────────┐
-               Qdrant            ▼         ▼         ▼          ▼
-                              Dense     Lexical    Hybrid   Hybrid Reranked
-                                │          │         │          │
-                                │          │    Dense + BM25    │
-                                │          │         │          │
-                                │          │         ▼          │
-                                │          │        RRF ────────┘
-                                │          │                    │
-                                │          │                    ▼
-                                │          │              Cross-Encoder
-                                └──────────┴────────────────────┘
-                                             │
-                                             ▼
-                                      ContextBuilder
-                                             │
-                                             ▼
+                  ┌─────────────┴─────────────┐
+                  │                           │
+                  ▼                           ▼
+            Document Pipeline           RetrievalRouter
+                  │                           │
+                  ▼          ┌─────────┬─────────┬──────────┬──────────────────┐
+                Qdrant        ▼         ▼         ▼          ▼
+                            Dense     Lexical    Hybrid   Hybrid Reranked
+                              │          │         │          │
+                              │          │    Dense + BM25    │
+                              │          │         │          │
+                              │          │         ▼          │
+                              │          │   Weighted RRF ─────┘
+                              │          │                    │
+                              │          │                    ▼
+                              │          │            Hybrid top 20
+                              │          │                    ↓
+                              │          │              keep top 10
+                              │          │                    ↓
+                              │          │              Cross-Encoder
+                              └──────────┴────────────────────┘
+                                           │
+                                           ▼
+                                     ContextBuilder
+                                           │
+                                           ▼
                                       Ollama / Qwen
-                                             │
-                                             ▼
-                                          RAGResponse
-                                             │
-                                             ▼
+                                           │
+                                           ▼
+                                        RAGResponse
+                                           │
+                                           ▼
                                       CitationService
-                                             │
-                                             ▼
-                                       CitedRAGResponse
+                                           │
+                                           ▼
+                                     CitedRAGResponse
 ```
 
 ---
@@ -455,6 +464,7 @@ See:
 - Hugging Face Transformers
 - Sentence Transformers
 - `BAAI/bge-small-en-v1.5`
+- `cross-encoder/ms-marco-MiniLM-L6-v2`
 - NumPy
 - Qdrant
 - Ollama
@@ -485,6 +495,8 @@ src/research_assistant/
 ├── embeddings/
 ├── vector_store/
 ├── retrieval/
+├── reranking/
+├── evaluation/
 ├── generation/
 ├── rag/
 └── citations/
@@ -496,6 +508,8 @@ tests/
 ├── embeddings/
 ├── vector_store/
 ├── retrieval/
+├── reranking/
+├── evaluation/
 ├── generation/
 ├── rag/
 └── citations/
@@ -509,10 +523,15 @@ frontend/
 
 scripts/
 ├── compare_retrieval_modes.py
-└── compare_reranking_modes.py
+├── compare_reranking_modes.py
+├── build_relevance_pool.py
+├── evaluate_retrieval.py
+└── build_retrieval_ledger.py
 
 experiments/
 ├── retrieval_queries.json
+├── retrieval_queries_phase13_expansion.json
+├── relevance_judgments_phase13_expansion.json
 └── results/
 
 docs/
@@ -526,6 +545,8 @@ docs/
 ├── retrieval.md
 ├── hybrid-retrieval.md
 ├── reranking.md
+├── phase13-evaluation.md
+├── project-story.md
 ├── generation.md
 ├── rag-pipeline.md
 ├── citations.md
@@ -584,12 +605,6 @@ Start Vite:
 npm run dev
 ```
 
-Open:
-
-```text
-http://localhost:5173
-```
-
 ---
 
 ## Local Model Runtime
@@ -601,47 +616,49 @@ ollama pull qwen3.5:9b
 ollama list
 ```
 
-Search mode does not require LLM generation.
-
-Ask mode requires the configured local model.
+Search/evaluation modes do not require LLM generation. Ask mode requires the configured local model.
 
 ---
 
-## Local Documents and Data
+## Local Documents and Experiment Data
 
 Local documents, vector storage, environment files, generated model files, and raw experiment result dumps should not be committed.
 
 Qdrant stores source text and provenance metadata, so the local vector store should be treated as potentially private research data.
+
+Raw Phase 13 traces and evaluation JSON files remain local under `experiments/results/`; derived conclusions and reproducible configuration belong in documentation.
 
 ---
 
 ## Documentation
 
 - [System Architecture](docs/architecture.md)
+- [Retrieval](docs/retrieval.md)
+- [Phase 13 Evaluation](docs/phase13-evaluation.md)
+- [Project Story / Post Source Bank](docs/project-story.md)
+- [Experiments](docs/experiments.md)
+- [Development Roadmap](docs/roadmap.md)
 - [RAG API](docs/api.md)
 - [Frontend Research Workspace](docs/frontend.md)
 - [Document Ingestion](docs/ingestion.md)
 - [Document Chunking](docs/chunking.md)
 - [Embeddings](docs/embeddings.md)
 - [Vector Storage](docs/vector-store.md)
-- [Retrieval](docs/retrieval.md)
 - [Hybrid Retrieval](docs/hybrid-retrieval.md)
 - [Cross-Encoder Reranking](docs/reranking.md)
 - [Local Generation](docs/generation.md)
 - [End-to-End RAG Pipeline](docs/rag-pipeline.md)
 - [Citation Integrity](docs/citations.md)
-- [Experiments](docs/experiments.md)
-- [Development Roadmap](docs/roadmap.md)
 
 ---
 
 ## Roadmap
 
-**Completed through Phase 12:** foundation, ingestion, token-aware chunking, local embeddings, persistent Qdrant storage, dense retrieval, local LLM integration, end-to-end RAG, citation integrity, FastAPI, React workspace, BM25 lexical retrieval, Reciprocal Rank Fusion, selectable hybrid retrieval, and local cross-encoder reranking.
+**Completed through Phase 13:** foundation, ingestion, token-aware chunking, local embeddings, persistent Qdrant storage, dense retrieval, local LLM integration, end-to-end RAG, citation integrity, FastAPI, React workspace, BM25 lexical retrieval, weighted hybrid retrieval, cross-encoder reranking, graded qrels, development tuning, and a frozen holdout retrieval evaluation.
 
-**Next:** Phase 13 — formal relevance-labelled retrieval and RAG evaluation.
+**Next:** Phase 14 — research-specific features such as structured summaries, methodology/findings extraction, evidence tables, cross-paper comparison, and multi-document synthesis.
 
-**After that:** research-specific features, observability, containerisation, deployment, and broader benchmarking.
+Later phases cover observability, containerisation, demo/deployment, and broader benchmarking/technical reporting.
 
 ---
 
@@ -650,13 +667,15 @@ Qdrant stores source text and provenance metadata, so the local vector store sho
 - **Local first:** keep documents, vectors, retrieval, and model inference local where practical.
 - **Preserve provenance:** trace evidence to its document, page, and chunk.
 - **Understand before abstracting:** expose RAG mechanics before adding high-level frameworks.
-- **Separate responsibilities:** ingestion, embeddings, storage, retrieval, generation, citations, HTTP transport, and UI remain explicit boundaries.
+- **Separate responsibilities:** ingestion, embeddings, storage, retrieval, reranking, evaluation, generation, citations, HTTP transport, and UI remain explicit boundaries.
 - **Bound context:** treat model context as a finite resource.
 - **Treat retrieved text as data:** document text does not become application instructions.
 - **Validate model output:** only application-known source IDs can become trusted citations.
 - **Keep identity separate from entailment:** citation identity is not claim-level proof.
-- **Measure instead of guess:** do not claim retrieval improvements without evaluation evidence.
+- **Measure instead of guess:** a working feature is not automatically a better feature.
+- **Keep failed experiments:** regressions are evidence about the system, not noise to hide.
+- **Protect the holdout:** freeze configuration before final holdout inspection and do not tune on holdout failures.
 
 ---
 
-🚧 Under active development. Phase 12 cross-encoder reranking is complete; Phase 13 labelled evaluation is next.
+🚧 Under active development. Phase 13 retrieval evaluation is complete; Phase 14 research features are next.

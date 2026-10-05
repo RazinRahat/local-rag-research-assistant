@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from math import isfinite
 
 from research_assistant.chunking.models import DocumentChunk
 from research_assistant.retrieval.models import RetrievalResult
@@ -23,8 +24,9 @@ def reciprocal_rank_fusion(
     *,
     top_k: int,
     config: RRFConfig | None = None,
+    weights: Sequence[float] | None = None,
 ) -> tuple[RetrievalResult, ...]:
-    """Fuse ranked retrieval results using reciprocal rank fusion."""
+    """Fuse ranked retrieval results using weighted RRF."""
 
     if top_k < 1:
         raise ValueError("top_k must be at least 1")
@@ -34,14 +36,37 @@ def reciprocal_rank_fusion(
 
     fusion_config = config or RRFConfig()
 
-    scores: dict[str, float] = {}
+    ranking_weights = (
+        tuple(weights) if weights is not None else tuple(1.0 for _ in rankings)
+    )
+
+    if len(ranking_weights) != len(rankings):
+        raise ValueError("weights must contain one value per ranking")
+
+    for weight in ranking_weights:
+        if not isfinite(weight) or weight <= 0.0:
+            raise ValueError("RRF weights must be finite and greater than 0")
+
+    scores: dict[
+        str,
+        float,
+    ] = {}
+
     chunks: dict[
         str,
         DocumentChunk,
     ] = {}
-    best_ranks: dict[str, int] = {}
 
-    for ranking in rankings:
+    best_ranks: dict[
+        str,
+        int,
+    ] = {}
+
+    for ranking, weight in zip(
+        rankings,
+        ranking_weights,
+        strict=True,
+    ):
         seen_chunk_ids: set[str] = set()
 
         for position, result in enumerate(
@@ -72,7 +97,7 @@ def reciprocal_rank_fusion(
 
             chunks[chunk_id] = chunk
 
-            contribution = 1.0 / (fusion_config.rank_constant + result.rank)
+            contribution = weight / (fusion_config.rank_constant + result.rank)
 
             scores[chunk_id] = (
                 scores.get(

@@ -1,0 +1,522 @@
+{
+  "experiment": "phase13_offline_rrf_tuning",
+  "development_queries": 12,
+  "holdout_used": false,
+  "current_baseline": {
+    "branch_depth": 10,
+    "rank_constant": 60,
+    "dense_weight": 1.0,
+    "lexical_weight": 1.0,
+    "aggregate": {
+      "precision_at_5": 0.35000000000000003,
+      "recall_at_5": 0.5902777777777778,
+      "mrr": 0.5305555555555556,
+      "ndcg_at_5": 0.49509164962045826
+    }
+  },
+  "recommended_zero_regression_configuration": {
+    "branch_depth": 10,
+    "rank_constant": 5,
+    "dense_weight": 1.0,
+    "lexical_weight": 1.25,
+    "precision_at_5": 0.3833333333333333,
+    "recall_at_5": 0.6736111111111112,
+    "mrr": 0.5750000000000001,
+    "ndcg_at_5": 0.5618811993507483,
+    "improvements": 4,
+    "degradations": 0,
+    "mixed": 0,
+    "no_change": 8
+  },
+  "best_aggregate_configuration": {
+    "branch_depth": 20,
+    "rank_constant": 1,
+    "dense_weight": 1.0,
+    "lexical_weight": 3.0,
+    "precision_at_5": 0.38333333333333336,
+    "recall_at_5": 0.6805555555555555,
+    "mrr": 0.7388888888888889,
+    "ndcg_at_5": 0.6379974278531148,
+    "improvements": 7,
+    "degradations": 3,
+    "mixed": 2,
+    "no_change": 0
+  },
+  "recommended_per_query_changes": [
+    {
+      "query_id": "dev_tr_positional_encoding_why",
+      "diagnostic_outcome": "no_change",
+      "baseline": {
+        "precision_at_5": 0.6,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 0.8994853925104838,
+        "top1_relevance": 3,
+        "relevances": [
+          3,
+          1,
+          0,
+          2,
+          2
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.6,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 0.8994853925104838,
+        "top1_relevance": 3,
+        "relevances": [
+          3,
+          1,
+          0,
+          2,
+          2
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_tr_scaled_dot_product",
+      "diagnostic_outcome": "no_change",
+      "baseline": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 0.7895959410076381,
+        "top1_relevance": 2,
+        "relevances": [
+          2,
+          3,
+          0,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 0.7895959410076381,
+        "top1_relevance": 2,
+        "relevances": [
+          2,
+          3,
+          0,
+          0,
+          0
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_tr_optimizer_schedule",
+      "diagnostic_outcome": "improvement",
+      "baseline": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.2,
+        "recall_at_5": 0.5,
+        "mrr": 0.2,
+        "ndcg_at_5": 0.30451296789464855,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.2,
+        "recall_at_5": 0.5,
+        "mrr": 0.2,
+        "ndcg_at_5": 0.30451296789464855,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_tr_translation_results",
+      "diagnostic_outcome": "no_change",
+      "baseline": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 0.6666666666666666,
+        "mrr": 1.0,
+        "ndcg_at_5": 0.7653606369886218,
+        "top1_relevance": 3,
+        "relevances": [
+          3,
+          3,
+          0,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 0.6666666666666666,
+        "mrr": 1.0,
+        "ndcg_at_5": 0.7653606369886218,
+        "top1_relevance": 3,
+        "relevances": [
+          3,
+          3,
+          0,
+          0,
+          0
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_gpt2_webtext_construction",
+      "diagnostic_outcome": "no_change",
+      "baseline": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_gpt2_byte_bpe",
+      "diagnostic_outcome": "improvement",
+      "baseline": {
+        "precision_at_5": 0.6,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 0.9521511920423338,
+        "top1_relevance": 3,
+        "relevances": [
+          3,
+          3,
+          0,
+          2,
+          0
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.6,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_5": 0.9811350423502985,
+        "top1_relevance": 3,
+        "relevances": [
+          3,
+          3,
+          0,
+          2,
+          1
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.028983850307964687,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_gpt2_zero_shot_tasks",
+      "diagnostic_outcome": "no_change",
+      "baseline": {
+        "precision_at_5": 0.2,
+        "recall_at_5": 0.16666666666666666,
+        "mrr": 0.2,
+        "ndcg_at_5": 0.2443405220083479,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          0,
+          0,
+          1,
+          3
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.2,
+        "recall_at_5": 0.16666666666666666,
+        "mrr": 0.2,
+        "ndcg_at_5": 0.2443405220083479,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          0,
+          0,
+          1,
+          3
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_gpt2_model_scale",
+      "diagnostic_outcome": "improvement",
+      "baseline": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 0.6666666666666666,
+        "mrr": 0.3333333333333333,
+        "ndcg_at_5": 0.4171247899796485,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          0,
+          2,
+          3,
+          0
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 0.6666666666666666,
+        "mrr": 0.5,
+        "ndcg_at_5": 0.498249761305974,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          2,
+          3,
+          0,
+          0
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.16666666666666669,
+        "ndcg_at_5": 0.08112497132632546,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_scale_primary_factors",
+      "diagnostic_outcome": "no_change",
+      "baseline": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 0.6666666666666666,
+        "mrr": 0.5,
+        "ndcg_at_5": 0.5931219484863599,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          3,
+          3,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 0.6666666666666666,
+        "mrr": 0.5,
+        "ndcg_at_5": 0.5931219484863599,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          3,
+          3,
+          0,
+          0
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_scale_compute_efficient_training",
+      "diagnostic_outcome": "no_change",
+      "baseline": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 0.6666666666666666,
+        "mrr": 0.5,
+        "ndcg_at_5": 0.36768241607530183,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          2,
+          0,
+          3,
+          0
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 0.6666666666666666,
+        "mrr": 0.5,
+        "ndcg_at_5": 0.36768241607530183,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          2,
+          0,
+          3,
+          0
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_scale_training_procedure",
+      "diagnostic_outcome": "improvement",
+      "baseline": {
+        "precision_at_5": 0.2,
+        "recall_at_5": 0.5,
+        "mrr": 0.3333333333333333,
+        "ndcg_at_5": 0.3065735963827292,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          0,
+          3,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.4,
+        "recall_at_5": 1.0,
+        "mrr": 0.5,
+        "ndcg_at_5": 0.6934264036172708,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          3,
+          3,
+          0,
+          0
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.2,
+        "recall_at_5": 0.5,
+        "mrr": 0.16666666666666669,
+        "ndcg_at_5": 0.38685280723454163,
+        "top1_relevance": 0
+      }
+    },
+    {
+      "query_id": "dev_scale_webtext2_stats",
+      "diagnostic_outcome": "no_change",
+      "baseline": {
+        "precision_at_5": 0.6,
+        "recall_at_5": 0.75,
+        "mrr": 0.5,
+        "ndcg_at_5": 0.6056633599640342,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          3,
+          2,
+          0,
+          2
+        ]
+      },
+      "candidate": {
+        "precision_at_5": 0.6,
+        "recall_at_5": 0.75,
+        "mrr": 0.5,
+        "ndcg_at_5": 0.6056633599640342,
+        "top1_relevance": 0,
+        "relevances": [
+          0,
+          3,
+          2,
+          0,
+          2
+        ]
+      },
+      "delta": {
+        "precision_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0,
+        "top1_relevance": 0
+      }
+    }
+  ],
+  "grid_size": 84,
+  "notes": [
+    "Only dev_* queries were used.",
+    "Binary relevance threshold is >=2; nDCG uses graded relevance 0-3.",
+    "Primary recommendation prioritizes zero diagnostic regressions over maximum aggregate nDCG.",
+    "Branch depth 10 matches the current final-top-5 hybrid candidate depth implied by candidate_multiplier=2."
+  ]
+}

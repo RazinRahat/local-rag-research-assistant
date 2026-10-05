@@ -453,3 +453,146 @@ def test_rrf_returns_sequential_final_ranks() -> None:
         2,
         3,
     )
+
+
+def test_rrf_applies_ranking_weights() -> None:
+    dense_chunk = make_chunk(
+        chunk_id="dense",
+        chunk_index=0,
+    )
+
+    lexical_chunk = make_chunk(
+        chunk_id="lexical",
+        chunk_index=1,
+    )
+
+    dense = (
+        make_result(
+            rank=1,
+            chunk=dense_chunk,
+        ),
+    )
+
+    lexical = (
+        make_result(
+            rank=1,
+            chunk=lexical_chunk,
+        ),
+    )
+
+    results = reciprocal_rank_fusion(
+        (
+            dense,
+            lexical,
+        ),
+        top_k=2,
+        config=RRFConfig(
+            rank_constant=5,
+        ),
+        weights=(
+            1.0,
+            1.25,
+        ),
+    )
+
+    assert results[0].chunk.chunk_id == "lexical"
+
+    assert results[0].score == pytest.approx(1.25 / 6)
+
+    assert results[1].score == pytest.approx(1.0 / 6)
+
+
+def test_rrf_defaults_to_equal_weights() -> None:
+    chunk_a = make_chunk(
+        chunk_id="a",
+        chunk_index=0,
+    )
+
+    chunk_b = make_chunk(
+        chunk_id="b",
+        chunk_index=1,
+    )
+
+    results = reciprocal_rank_fusion(
+        (
+            (
+                make_result(
+                    rank=1,
+                    chunk=chunk_a,
+                ),
+            ),
+            (
+                make_result(
+                    rank=1,
+                    chunk=chunk_b,
+                ),
+            ),
+        ),
+        top_k=2,
+        config=RRFConfig(
+            rank_constant=5,
+        ),
+    )
+
+    assert results[0].score == pytest.approx(results[1].score)
+
+
+def test_rrf_rejects_weight_count_mismatch() -> None:
+    chunk = make_chunk(
+        chunk_id="a",
+    )
+
+    ranking = (
+        make_result(
+            rank=1,
+            chunk=chunk,
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=("one value per ranking"),
+    ):
+        reciprocal_rank_fusion(
+            (
+                ranking,
+                ranking,
+            ),
+            top_k=1,
+            weights=(1.0,),
+        )
+
+
+@pytest.mark.parametrize(
+    "weight",
+    (
+        0.0,
+        -1.0,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ),
+)
+def test_rrf_rejects_invalid_weight(
+    weight: float,
+) -> None:
+    chunk = make_chunk(
+        chunk_id="a",
+    )
+
+    ranking = (
+        make_result(
+            rank=1,
+            chunk=chunk,
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=("finite and greater than 0"),
+    ):
+        reciprocal_rank_fusion(
+            (ranking,),
+            top_k=1,
+            weights=(weight,),
+        )

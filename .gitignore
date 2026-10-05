@@ -42,5 +42,21 @@ models/
 *.log
 logs/
 
-# Local experiment outputs
-experiments/results/*.json
+# Raw / potentially source-containing experiment outputs
+experiments/results/retrieval_evaluation_*.json
+experiments/results/relevance_pool_trace_*.json
+experiments/results/relevance_pool_review_*.json
+
+# Personal project notes
+notes/
+
+# Blind relevance-review working files
+experiments/relevance_review*.csv
+
+# Legacy / local relevance judgments
+experiments/relevance_judgments.json
+
+# Raw experiment comparisons and ledgers
+experiments/results/retrieval_comparison_*.json
+experiments/results/reranking_comparison_*.json
+experiments/results/retrieval_ledger_*.json

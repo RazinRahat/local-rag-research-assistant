@@ -4,7 +4,7 @@
 
 The Local RAG Research Assistant is designed as a modular, local-first Retrieval-Augmented Generation system for research documents.
 
-Rather than treating RAG as one black-box operation, the application separates ingestion, chunking, embeddings, persistence, retrieval, context construction, generation, citations, API transport, frontend presentation, and evaluation into independently testable components.
+Rather than treating RAG as one black-box operation, the application separates ingestion, chunking, embeddings, persistence, retrieval, reranking, evaluation, context construction, generation, citations, API transport, and frontend presentation into independently testable components.
 
 ---
 
@@ -22,36 +22,45 @@ Rather than treating RAG as one black-box operation, the application separates i
                              ▼
                       ResearchService
                              │
-           ┌─────────────────┼─────────────────┐
-           │                 │                 │
-           ▼                 ▼                 ▼
-      Document Flow    RetrievalRouter    Citation Service
+           ┌─────────────────┼──────────────────┐
+           │                 │                  │
+           ▼                 ▼                  ▼
+      Document Flow    RetrievalRouter     Citation Service
            │                 │
-           ▼        ┌────────┼────────┐
-        Qdrant      ▼        ▼        ▼
-                  Dense   Lexical   Hybrid
-                    │        │        │
-                    │        │    Dense + BM25
-                    │        │        │
-                    │        │        ▼
-                    │        │       RRF
-                    └────────┴────────┘
+           ▼       ┌─────────┼─────────┬──────────────┐
+        Qdrant     ▼         ▼         ▼              ▼
+                Dense     Lexical   Hybrid      Hybrid Reranked
+                  │          │         │              │
+                  │          │    Dense + BM25        │
+                  │          │         │              │
+                  │          │         ▼              │
+                  │          │   Weighted RRF ────────┘
+                  │          │                        │
+                  │          │                        ▼
+                  │          │                  Hybrid top 20
+                  │          │                        ↓
+                  │          │                    top 10
+                  │          │                        ↓
+                  │          │                  Cross-Encoder
+                  └──────────┴────────────────────────┘
                              │
                              ▼
-                       ContextBuilder
+                        ContextBuilder
                              │
                              ▼
-                        Ollama/Qwen
+                         Ollama/Qwen
                              │
                              ▼
-                         RAGResponse
+                          RAGResponse
                              │
                              ▼
-                      CitationService
+                       CitationService
                              │
                              ▼
-                     CitedRAGResponse
+                      CitedRAGResponse
 ```
+
+Formal retrieval evaluation is a separate boundary around the retrieval subsystem rather than part of runtime answer generation.
 
 ---
 
@@ -128,6 +137,8 @@ Stored points contain vector data, chunk text, provenance, and embedding metadat
 
 The core vector-store boundary supports collection creation, compatibility checks, replacement, deletion, search, counts, and lifecycle cleanup.
 
+Qdrant also implements separate document-registry and chunk-corpus roles needed by document management and lexical retrieval.
+
 ---
 
 # Retrieval Architecture
@@ -136,24 +147,26 @@ The core vector-store boundary supports collection creation, compatibility check
                             Query
                               │
                               ▼
-                      RetrievalRouter
+                       RetrievalRouter
                               │
-           ┌──────────────────┼──────────────────┐
-           ▼                  ▼                  ▼
-        Dense              Lexical             Hybrid
-           │                  │                  │
-           ▼                  ▼          ┌───────┴───────┐
-SemanticRetriever       BM25Retriever     ▼               ▼
-           │                  │        Dense            BM25
-           ▼                  ▼           │               │
-EmbeddingProvider       ChunkCorpus        └───────┬───────┘
-           │                  │                   ▼
-           ▼                  ▼                  RRF
-      VectorStore           Qdrant                 │
-           │                                        ▼
-           ▼                                RetrievalResult[]
-         Qdrant
+        ┌─────────────────────┼──────────────────────┬──────────────────────┐
+        ▼                     ▼                      ▼                      ▼
+      Dense                Lexical                Hybrid             Hybrid Reranked
+        │                     │                      │                      │
+        ▼                     ▼             ┌────────┴────────┐             │
+SemanticRetriever       BM25Retriever        ▼                 ▼            │
+        │                     │            Dense             BM25           │
+        ▼                     ▼              │                 │            │
+EmbeddingProvider       ChunkCorpus           └───────┬─────────┘            │
+        │                     │                      ▼                      │
+        ▼                     ▼                Weighted RRF ────────────────┘
+   VectorStore              Qdrant                   │
+        │                                            ▼
+        ▼                                      RetrievalResult[]
+      Qdrant
 ```
+
+All strategies satisfy the same `Retriever` protocol.
 
 ---
 
@@ -196,26 +209,72 @@ b = 0.75
 
 ---
 
-## Hybrid Retrieval
+## Weighted Hybrid Retrieval
 
 ```text
 Dense candidates
 +
 Lexical candidates
  ↓
-Reciprocal Rank Fusion
+Weighted Reciprocal Rank Fusion
  ↓
 RetrievalResult[]
 ```
 
-Current baseline:
+Frozen Phase 13 Hybrid configuration:
 
 ```text
-RRF rank constant = 60
+RRF rank constant = 5
+dense weight = 1.00
+lexical weight = 1.25
 candidate multiplier = 2
 ```
 
 RRF is used because dense cosine and BM25 scores are not directly comparable.
+
+The generic RRF primitive remains reusable; the Hybrid retriever owns the tuned branch weights and production RRF constant.
+
+---
+
+# Reranking Architecture
+
+`hybrid_reranked` wraps Hybrid with a second-stage cross-encoder.
+
+The final architecture separates **first-stage candidate generation** from **second-stage reranking depth**:
+
+```text
+candidate_pool_size = 20
+rerank_pool_size    = 10
+```
+
+For a default final `top_k=5` request:
+
+```text
+RerankingRetriever
+requests Hybrid top 20
+        ↓
+Hybrid candidate_multiplier = 2
+        ↓
+Dense top 40 + BM25 top 40
+        ↓
+weighted RRF
+        ↓
+Hybrid top 20
+        ↓
+retain ranks 1–10
+        ↓
+CrossEncoderReranker
+        ↓
+final top 5
+```
+
+The cross-encoder model is:
+
+```text
+cross-encoder/ms-marco-MiniLM-L6-v2
+```
+
+This decoupling was introduced after Phase 13 showed that reducing a single shared pool parameter also reduced nested Hybrid branch depth, unintentionally changing candidate generation.
 
 ---
 
@@ -234,12 +293,13 @@ These responsibilities remain represented by separate protocols.
 
 # Retrieval Routing
 
-`RetrievalConfig` contains the requested strategy:
+`RetrievalConfig` supports:
 
 ```text
 dense
 lexical
 hybrid
+hybrid_reranked
 ```
 
 `RetrievalRouter` selects the corresponding implementation.
@@ -335,9 +395,10 @@ EvidenceBlock
 Score meaning depends on retrieval mode:
 
 ```text
-dense    → cosine similarity
-lexical  → BM25 score
-hybrid   → RRF score
+dense              → cosine similarity
+lexical            → BM25 score
+hybrid             → weighted RRF score
+hybrid_reranked    → cross-encoder relevance score
 ```
 
 ---
@@ -360,6 +421,8 @@ CitationSource
 
 The application, not the model, owns document/page/chunk provenance.
 
+Citation identity validation does not prove semantic support for every generated claim.
+
 ---
 
 # Insufficient Evidence
@@ -372,7 +435,7 @@ Skip LLM
 Insufficient-Evidence Response
 ```
 
-Nearest-neighbour retrieval can still return weak candidates for unrelated questions, so weak-evidence detection remains an evaluation problem.
+Nearest-neighbour retrieval can still return weak candidates for unrelated questions, so out-of-scope/negative-query evaluation remains a future RAG evaluation task.
 
 ---
 
@@ -411,7 +474,7 @@ ResearchAPIClient
 FastAPI
 ```
 
-The browser does not access Qdrant, BGE, Ollama, or tokenizer internals directly.
+The browser does not access Qdrant, BGE, Ollama, reranker internals, or tokenizer internals directly.
 
 ---
 
@@ -438,6 +501,8 @@ Local Qdrant
  ↓
 Local retrieval
  ↓
+Local reranking
+ ↓
 Local context building
  ↓
 Local Ollama/Qwen
@@ -447,18 +512,72 @@ Local cited answer
 
 ---
 
-# Evaluation Boundary
+# Evaluation Architecture
 
-Retrieval, generation, and citation behaviour are evaluated separately.
+Retrieval, generation, citation identity, and citation semantic support are treated as separate evaluation problems.
 
-Planned retrieval metrics:
+Phase 13 formal retrieval evaluation uses:
 
 ```text
-Recall@K
-Precision@K
-MRR
-nDCG
+3 papers
+18 document-scoped queries
+12 development
+6 holdout
+527 graded judgments
 ```
+
+Pipeline:
+
+```text
+fixed query set
+      ↓
+retrieval modes
+      ↓
+pooled candidates
+      ├───────────────┐
+      ▼               ▼
+blind review        trace
+      │               │
+      ▼               │
+     qrels            │
+      └───────┬───────┘
+              ▼
+        metric runner
+              ↓
+Precision / Recall / MRR / nDCG
+              ↓
+regression diagnostics
+```
+
+The development split may be used for tuning. The holdout split is inspected only after retrieval configuration is frozen.
+
+Recall is pooled recall because relevance judgments are based on pooled candidates rather than exhaustive corpus annotation.
+
+---
+
+# Phase 13 Architectural Lesson
+
+One of the most useful Phase 13 findings was architectural rather than purely metric-based.
+
+The first attempt to reduce cross-encoder depth changed a single `candidate_pool_size` from 20 to 10. Because the wrapped Hybrid retriever expands its own candidates, this also changed Dense/BM25 depth from 40 to 20.
+
+The intended experiment was:
+
+```text
+retrieve deeply
+then rerank fewer candidates
+```
+
+but the code actually tested:
+
+```text
+retrieve less deeply
+and rerank fewer candidates
+```
+
+Introducing `rerank_pool_size` made those concerns explicit and testable.
+
+This is retained in the architecture because it is a general lesson: configuration values should map to one clear responsibility when nested retrieval stages amplify each other.
 
 ---
 
@@ -478,19 +597,18 @@ Citation integrity
 FastAPI
 React UI
 BM25 lexical retrieval
-RRF hybrid retrieval
+Weighted RRF hybrid retrieval
+Cross-encoder reranking
 Retrieval routing
-Dense/lexical/hybrid comparison
+Formal graded retrieval evaluation
+Development tuning
+Frozen holdout evaluation
 ```
 
 Next:
 
 ```text
-Cross-encoder reranking
+Phase 14 — Research Features
 ```
 
-Then:
-
-```text
-Formal labelled evaluation
-```
+Later evaluation expands into answer faithfulness, abstention quality, and claim-level citation support rather than continuing to optimise the existing 12-query development set.

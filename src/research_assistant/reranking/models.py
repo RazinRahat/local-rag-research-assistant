@@ -1,7 +1,10 @@
+from typing import Self
+
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    model_validator,
 )
 
 
@@ -38,3 +41,17 @@ class RerankingConfig(BaseModel):
         default=20,
         ge=1,
     )
+
+    rerank_pool_size: int = Field(
+        default=10,
+        ge=1,
+    )
+
+    @model_validator(mode="after")
+    def validate_pool_sizes(
+        self,
+    ) -> Self:
+        if self.rerank_pool_size > self.candidate_pool_size:
+            raise ValueError("rerank_pool_size cannot exceed candidate_pool_size")
+
+        return self

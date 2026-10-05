@@ -309,7 +309,6 @@ def test_nested_candidate_expansion_reaches_branches() -> None:
     )
 
     assert len(dense.calls) == 1
-
     assert len(lexical.calls) == 1
 
     _, dense_config = dense.calls[0]
@@ -319,13 +318,17 @@ def test_nested_candidate_expansion_reaches_branches() -> None:
     # RerankingRetriever:
     # final top_k 5
     #     ↓
-    # candidate pool 20
+    # Hybrid candidate pool 20
     #
     # HybridRetriever:
     # candidate_multiplier 2
     #     ↓
     # dense top_k 40
     # lexical top_k 40
+    #
+    # RerankingRetriever then keeps
+    # only Hybrid top 10 for
+    # cross-encoder scoring.
 
     assert dense_config.top_k == 40
 

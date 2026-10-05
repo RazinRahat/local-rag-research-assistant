@@ -1,0 +1,2828 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-05T09:15:18.451258+00:00",
+  "source_csv": "experiments/relevance_review_phase13_expansion_reviewed.csv",
+  "relevance_scale": {
+    "0": "Not relevant",
+    "1": "Marginally relevant or topically related",
+    "2": "Relevant supporting evidence",
+    "3": "Directly answers or strongly supports the query"
+  },
+  "queries": [
+    {
+      "id": "dev_tr_positional_encoding_why",
+      "query": "Why does the Transformer need positional encoding?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "123829c74c8c0dd32126a127237b17e4cf896c3ca8aa0c8e6ce7bc1042882965",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "229136292b907560660c7f5d0d0b25309470f4301583ab4db4a2b4b58e4fcefa",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "25322f8e4c65aca927df860bb4cb15d2291f7ed421baea230adfffdcbaf309fa",
+          "relevance": 1,
+          "rationale": "Mentions positional encodings only as a regularization target; it does not explain why they are required."
+        },
+        {
+          "chunk_id": "2e9ef07a9da584a96bb08d6fd53e1b30f0f694d53fc55d43ae3b827aa856a28a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "34c9e8f9c61d816d6225ce7e56695432555a6e7b3ec382b8832f8a38137b861c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4e54f48b1791670f860c9c77569ec0bd84cb858705fdffc5f746af663ce83af5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "514b9950c0d38e36294f08d1ba59c2b5a5791529a7e2cbd23b8006cee85b786e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5a53dd258cdd725f39fc975f5be35d8a2bd58b0065f11c887180124b93c2fe48",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6fa3f387893d7fe5be92b42cfad9d54f144ce3f6f5cf5edc502b6582c98c4c1d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7a52f4b9334befff5a8edd90e0d27cae439bca9800542a2cfdaf69d77de4b6f2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "946a05c7db76daf113f9f667d8fd48aea1493529743cecf67ff1af50712bbfe9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9a98eb60b00e8da2638b35a1bd9b4bbb110c14adc46b6f32c1f97cc3f94b14db",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9fdb62279b3fc283829dd642e82d0a02c2fc1a861197dcd4c95b1f5bb4b67b88",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b748bf2ce09d2ed9be079093b74ab7c9b4ffb61b1ed3eef12cf243080148808e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b9b6c19a8e20cb67c381ebbb2f471797c52eff60ee1c93d44bf845343f1e31e5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "bf76e52c95f6fc6ce7c46f44cd028906785eba7a2c5f252a7505633742f1bd2b",
+          "relevance": 3,
+          "rationale": "Directly explains that because the Transformer has no recurrence or convolution, positional information must be injected so the model can use sequence order."
+        },
+        {
+          "chunk_id": "cf11b306f5c12363c3ade36a1025942f7ed3957a170c6626bddb7a58099dd6e7",
+          "relevance": 2,
+          "rationale": "Describes the positional encoding construction and its relative-position motivation, providing useful supporting evidence after the need for position information is established."
+        },
+        {
+          "chunk_id": "d82fdb1cd20ef6171431643c259bd11cbd2faf967c4f237a22cb8b34bfb02de2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "da78430109ab5b700451940ea5db9118e588b22c7d69df6892f1bd6ec4b488db",
+          "relevance": 2,
+          "rationale": "Explains why the sinusoidal positional representation is useful for relative positions and extrapolation, supporting the role of positional information."
+        },
+        {
+          "chunk_id": "ebe947d1ee6a12b4b93245a9c3f0fa32087557b3a0902f5b6bbb95e83a8550d3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff210e5f9058cf8713df849354c8b09dc7e0b7a3aed07083d330f3b1a0e28660",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff91f796f0e9c0da90f538603eb65e44c672d20b7eee823d1bf8c5bfb9620e88",
+          "relevance": 1,
+          "rationale": "Reports that learned and sinusoidal positional representations perform similarly, but does not explain the fundamental need for positional encoding."
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_tr_scaled_dot_product",
+      "query": "Why are attention dot products divided by the square root of the key dimension?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "123829c74c8c0dd32126a127237b17e4cf896c3ca8aa0c8e6ce7bc1042882965",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "229136292b907560660c7f5d0d0b25309470f4301583ab4db4a2b4b58e4fcefa",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "25322f8e4c65aca927df860bb4cb15d2291f7ed421baea230adfffdcbaf309fa",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "25c5a0509b5a80466c26475681ec1a298f63cf0bb79ec93a15d24c127c11b86e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "2e9ef07a9da584a96bb08d6fd53e1b30f0f694d53fc55d43ae3b827aa856a28a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "34c9e8f9c61d816d6225ce7e56695432555a6e7b3ec382b8832f8a38137b861c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "39d86b6fdff89260f3bbf5bb1c54ce46ff7e447726098c7b6cac55934da2426d",
+          "relevance": 3,
+          "rationale": "Directly explains that large dot products push softmax into regions with very small gradients and that scaling by the square root of the key dimension counteracts this effect."
+        },
+        {
+          "chunk_id": "4e54f48b1791670f860c9c77569ec0bd84cb858705fdffc5f746af663ce83af5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "514b9950c0d38e36294f08d1ba59c2b5a5791529a7e2cbd23b8006cee85b786e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6fa3f387893d7fe5be92b42cfad9d54f144ce3f6f5cf5edc502b6582c98c4c1d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7a52f4b9334befff5a8edd90e0d27cae439bca9800542a2cfdaf69d77de4b6f2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "946a05c7db76daf113f9f667d8fd48aea1493529743cecf67ff1af50712bbfe9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9a98eb60b00e8da2638b35a1bd9b4bbb110c14adc46b6f32c1f97cc3f94b14db",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9fdb62279b3fc283829dd642e82d0a02c2fc1a861197dcd4c95b1f5bb4b67b88",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b748bf2ce09d2ed9be079093b74ab7c9b4ffb61b1ed3eef12cf243080148808e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b9b6c19a8e20cb67c381ebbb2f471797c52eff60ee1c93d44bf845343f1e31e5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "bf76e52c95f6fc6ce7c46f44cd028906785eba7a2c5f252a7505633742f1bd2b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "c499a2ec82b0ce43af820b40c0bd698f675fc8b759101f10adcdcf5b1e5ca6a9",
+          "relevance": 2,
+          "rationale": "Introduces scaled dot-product attention and the key dimension, providing useful setup for the scaling explanation but not the reason itself."
+        },
+        {
+          "chunk_id": "cf11b306f5c12363c3ade36a1025942f7ed3957a170c6626bddb7a58099dd6e7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "da78430109ab5b700451940ea5db9118e588b22c7d69df6892f1bd6ec4b488db",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e1b75793fbf7ac76807483f1ff3f0d68f3d5e6389413bad1e11d220a01e85261",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ebe947d1ee6a12b4b93245a9c3f0fa32087557b3a0902f5b6bbb95e83a8550d3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff210e5f9058cf8713df849354c8b09dc7e0b7a3aed07083d330f3b1a0e28660",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff91f796f0e9c0da90f538603eb65e44c672d20b7eee823d1bf8c5bfb9620e88",
+          "relevance": 1,
+          "rationale": "Discusses attention key dimensionality and compatibility quality, but not the softmax-gradient reason for square-root scaling."
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_tr_optimizer_schedule",
+      "query": "What optimizer and learning-rate schedule were used to train the Transformer?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "123829c74c8c0dd32126a127237b17e4cf896c3ca8aa0c8e6ce7bc1042882965",
+          "relevance": 3,
+          "rationale": "Directly specifies Adam with beta1=0.9, beta2=0.98 and epsilon=1e-9, plus linear warmup followed by inverse-square-root decay and 4000 warmup steps."
+        },
+        {
+          "chunk_id": "229136292b907560660c7f5d0d0b25309470f4301583ab4db4a2b4b58e4fcefa",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "25322f8e4c65aca927df860bb4cb15d2291f7ed421baea230adfffdcbaf309fa",
+          "relevance": 2,
+          "rationale": "Directly states the 4000-step warmup and inverse-square-root decay, but the chunk no longer contains the optimizer identity and full hyperparameters."
+        },
+        {
+          "chunk_id": "25c5a0509b5a80466c26475681ec1a298f63cf0bb79ec93a15d24c127c11b86e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "2e9ef07a9da584a96bb08d6fd53e1b30f0f694d53fc55d43ae3b827aa856a28a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "34c9e8f9c61d816d6225ce7e56695432555a6e7b3ec382b8832f8a38137b861c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "39d86b6fdff89260f3bbf5bb1c54ce46ff7e447726098c7b6cac55934da2426d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4e54f48b1791670f860c9c77569ec0bd84cb858705fdffc5f746af663ce83af5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "514b9950c0d38e36294f08d1ba59c2b5a5791529a7e2cbd23b8006cee85b786e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5a53dd258cdd725f39fc975f5be35d8a2bd58b0065f11c887180124b93c2fe48",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6fa3f387893d7fe5be92b42cfad9d54f144ce3f6f5cf5edc502b6582c98c4c1d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7a52f4b9334befff5a8edd90e0d27cae439bca9800542a2cfdaf69d77de4b6f2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9a98eb60b00e8da2638b35a1bd9b4bbb110c14adc46b6f32c1f97cc3f94b14db",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9fdb62279b3fc283829dd642e82d0a02c2fc1a861197dcd4c95b1f5bb4b67b88",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b748bf2ce09d2ed9be079093b74ab7c9b4ffb61b1ed3eef12cf243080148808e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b9b6c19a8e20cb67c381ebbb2f471797c52eff60ee1c93d44bf845343f1e31e5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cf11b306f5c12363c3ade36a1025942f7ed3957a170c6626bddb7a58099dd6e7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d82fdb1cd20ef6171431643c259bd11cbd2faf967c4f237a22cb8b34bfb02de2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "da78430109ab5b700451940ea5db9118e588b22c7d69df6892f1bd6ec4b488db",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ebe947d1ee6a12b4b93245a9c3f0fa32087557b3a0902f5b6bbb95e83a8550d3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff210e5f9058cf8713df849354c8b09dc7e0b7a3aed07083d330f3b1a0e28660",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff91f796f0e9c0da90f538603eb65e44c672d20b7eee823d1bf8c5bfb9620e88",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_tr_translation_results",
+      "query": "What BLEU scores did the big Transformer achieve on WMT 2014 English-German and English-French?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "123829c74c8c0dd32126a127237b17e4cf896c3ca8aa0c8e6ce7bc1042882965",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "229136292b907560660c7f5d0d0b25309470f4301583ab4db4a2b4b58e4fcefa",
+          "relevance": 3,
+          "rationale": "The abstract directly reports 28.4 BLEU for WMT 2014 English-German and 41.0 BLEU for English-French."
+        },
+        {
+          "chunk_id": "25322f8e4c65aca927df860bb4cb15d2291f7ed421baea230adfffdcbaf309fa",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "25c5a0509b5a80466c26475681ec1a298f63cf0bb79ec93a15d24c127c11b86e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "2e9ef07a9da584a96bb08d6fd53e1b30f0f694d53fc55d43ae3b827aa856a28a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "39d86b6fdff89260f3bbf5bb1c54ce46ff7e447726098c7b6cac55934da2426d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4e54f48b1791670f860c9c77569ec0bd84cb858705fdffc5f746af663ce83af5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "514b9950c0d38e36294f08d1ba59c2b5a5791529a7e2cbd23b8006cee85b786e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "595fc150628a9f21ec86f29780fc8d89ccafb714a2ec651921226287bba9f557",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5a53dd258cdd725f39fc975f5be35d8a2bd58b0065f11c887180124b93c2fe48",
+          "relevance": 3,
+          "rationale": "The results table directly gives the big Transformer's 28.4 English-German and 41.0 English-French BLEU scores."
+        },
+        {
+          "chunk_id": "6fa3f387893d7fe5be92b42cfad9d54f144ce3f6f5cf5edc502b6582c98c4c1d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7a52f4b9334befff5a8edd90e0d27cae439bca9800542a2cfdaf69d77de4b6f2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9a98eb60b00e8da2638b35a1bd9b4bbb110c14adc46b6f32c1f97cc3f94b14db",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9fdb62279b3fc283829dd642e82d0a02c2fc1a861197dcd4c95b1f5bb4b67b88",
+          "relevance": 3,
+          "rationale": "The machine-translation results text directly states both 28.4 BLEU for English-German and 41.0 for English-French."
+        },
+        {
+          "chunk_id": "a46ac3b0af70b80f21bf4bb810afddf22fe98d876bff1e116c11c476a32950be",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b58b725b5554b5b9823beacf7fa0476b9a1bb888b3d44d84a94f07ee48670b18",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b9b6c19a8e20cb67c381ebbb2f471797c52eff60ee1c93d44bf845343f1e31e5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cf11b306f5c12363c3ade36a1025942f7ed3957a170c6626bddb7a58099dd6e7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e1b75793fbf7ac76807483f1ff3f0d68f3d5e6389413bad1e11d220a01e85261",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ebe947d1ee6a12b4b93245a9c3f0fa32087557b3a0902f5b6bbb95e83a8550d3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff210e5f9058cf8713df849354c8b09dc7e0b7a3aed07083d330f3b1a0e28660",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff91f796f0e9c0da90f538603eb65e44c672d20b7eee823d1bf8c5bfb9620e88",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "holdout_tr_decoder_masking",
+      "query": "How does the Transformer decoder prevent a position from seeing future output positions?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "229136292b907560660c7f5d0d0b25309470f4301583ab4db4a2b4b58e4fcefa",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "25322f8e4c65aca927df860bb4cb15d2291f7ed421baea230adfffdcbaf309fa",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "25c5a0509b5a80466c26475681ec1a298f63cf0bb79ec93a15d24c127c11b86e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "2e9ef07a9da584a96bb08d6fd53e1b30f0f694d53fc55d43ae3b827aa856a28a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "34c9e8f9c61d816d6225ce7e56695432555a6e7b3ec382b8832f8a38137b861c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4e54f48b1791670f860c9c77569ec0bd84cb858705fdffc5f746af663ce83af5",
+          "relevance": 1,
+          "rationale": "Establishes that the decoder is autoregressive but does not explain the masking mechanism that prevents future-token access."
+        },
+        {
+          "chunk_id": "514b9950c0d38e36294f08d1ba59c2b5a5791529a7e2cbd23b8006cee85b786e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "595fc150628a9f21ec86f29780fc8d89ccafb714a2ec651921226287bba9f557",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5a53dd258cdd725f39fc975f5be35d8a2bd58b0065f11c887180124b93c2fe48",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6fa3f387893d7fe5be92b42cfad9d54f144ce3f6f5cf5edc502b6582c98c4c1d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7a52f4b9334befff5a8edd90e0d27cae439bca9800542a2cfdaf69d77de4b6f2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "946a05c7db76daf113f9f667d8fd48aea1493529743cecf67ff1af50712bbfe9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9a98eb60b00e8da2638b35a1bd9b4bbb110c14adc46b6f32c1f97cc3f94b14db",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9fdb62279b3fc283829dd642e82d0a02c2fc1a861197dcd4c95b1f5bb4b67b88",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b748bf2ce09d2ed9be079093b74ab7c9b4ffb61b1ed3eef12cf243080148808e",
+          "relevance": 3,
+          "rationale": "Directly explains causal masking: decoder self-attention masks illegal future connections by setting their softmax inputs to negative infinity."
+        },
+        {
+          "chunk_id": "b9b6c19a8e20cb67c381ebbb2f471797c52eff60ee1c93d44bf845343f1e31e5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "bf76e52c95f6fc6ce7c46f44cd028906785eba7a2c5f252a7505633742f1bd2b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cf11b306f5c12363c3ade36a1025942f7ed3957a170c6626bddb7a58099dd6e7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d82fdb1cd20ef6171431643c259bd11cbd2faf967c4f237a22cb8b34bfb02de2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "da78430109ab5b700451940ea5db9118e588b22c7d69df6892f1bd6ec4b488db",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e1b75793fbf7ac76807483f1ff3f0d68f3d5e6389413bad1e11d220a01e85261",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ebe947d1ee6a12b4b93245a9c3f0fa32087557b3a0902f5b6bbb95e83a8550d3",
+          "relevance": 3,
+          "rationale": "Directly states that decoder self-attention is modified to block subsequent positions so prediction at position i depends only on earlier known outputs."
+        },
+        {
+          "chunk_id": "ff210e5f9058cf8713df849354c8b09dc7e0b7a3aed07083d330f3b1a0e28660",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff91f796f0e9c0da90f538603eb65e44c672d20b7eee823d1bf8c5bfb9620e88",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "holdout_tr_positional_embedding_comparison",
+      "query": "How did learned positional embeddings compare with sinusoidal positional encodings?",
+      "document_id": "d87d482d5ae7960e2e43d7dd6d21377e60e73e8fce1bf2a01aff7aca8a08c537",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "123829c74c8c0dd32126a127237b17e4cf896c3ca8aa0c8e6ce7bc1042882965",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "25322f8e4c65aca927df860bb4cb15d2291f7ed421baea230adfffdcbaf309fa",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "25c5a0509b5a80466c26475681ec1a298f63cf0bb79ec93a15d24c127c11b86e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "2e9ef07a9da584a96bb08d6fd53e1b30f0f694d53fc55d43ae3b827aa856a28a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "34c9e8f9c61d816d6225ce7e56695432555a6e7b3ec382b8832f8a38137b861c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "39d86b6fdff89260f3bbf5bb1c54ce46ff7e447726098c7b6cac55934da2426d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4e54f48b1791670f860c9c77569ec0bd84cb858705fdffc5f746af663ce83af5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "514b9950c0d38e36294f08d1ba59c2b5a5791529a7e2cbd23b8006cee85b786e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "595fc150628a9f21ec86f29780fc8d89ccafb714a2ec651921226287bba9f557",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6fa3f387893d7fe5be92b42cfad9d54f144ce3f6f5cf5edc502b6582c98c4c1d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7a52f4b9334befff5a8edd90e0d27cae439bca9800542a2cfdaf69d77de4b6f2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "946a05c7db76daf113f9f667d8fd48aea1493529743cecf67ff1af50712bbfe9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9a98eb60b00e8da2638b35a1bd9b4bbb110c14adc46b6f32c1f97cc3f94b14db",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a46ac3b0af70b80f21bf4bb810afddf22fe98d876bff1e116c11c476a32950be",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b58b725b5554b5b9823beacf7fa0476b9a1bb888b3d44d84a94f07ee48670b18",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b748bf2ce09d2ed9be079093b74ab7c9b4ffb61b1ed3eef12cf243080148808e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b9b6c19a8e20cb67c381ebbb2f471797c52eff60ee1c93d44bf845343f1e31e5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "bf76e52c95f6fc6ce7c46f44cd028906785eba7a2c5f252a7505633742f1bd2b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "c499a2ec82b0ce43af820b40c0bd698f675fc8b759101f10adcdcf5b1e5ca6a9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cf11b306f5c12363c3ade36a1025942f7ed3957a170c6626bddb7a58099dd6e7",
+          "relevance": 1,
+          "rationale": "Introduces positional encodings and learned/fixed alternatives but does not give the empirical comparison requested."
+        },
+        {
+          "chunk_id": "da78430109ab5b700451940ea5db9118e588b22c7d69df6892f1bd6ec4b488db",
+          "relevance": 3,
+          "rationale": "Directly states that learned positional embeddings and sinusoidal encodings produced nearly identical results and gives the extrapolation reason for choosing sinusoids."
+        },
+        {
+          "chunk_id": "e1b75793fbf7ac76807483f1ff3f0d68f3d5e6389413bad1e11d220a01e85261",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ebe947d1ee6a12b4b93245a9c3f0fa32087557b3a0902f5b6bbb95e83a8550d3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff210e5f9058cf8713df849354c8b09dc7e0b7a3aed07083d330f3b1a0e28660",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ff91f796f0e9c0da90f538603eb65e44c672d20b7eee823d1bf8c5bfb9620e88",
+          "relevance": 3,
+          "rationale": "Directly reports the model-variation result that replacing sinusoidal positional encoding with learned embeddings produced nearly identical performance."
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_gpt2_webtext_construction",
+      "query": "How was the WebText training dataset constructed?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "0840d6d9ca6b600191d21c33594ae53ad371f498cc9917315ea87330e7e54560",
+          "relevance": 3,
+          "rationale": "Directly explains the WebText collection strategy: outbound Reddit links with at least 3 karma were used as a human-curation heuristic."
+        },
+        {
+          "chunk_id": "0cf2d3b2d0fed6d69c0239e30dfdc4599ffebead7ddf3fecdbd183f0913887e8",
+          "relevance": 3,
+          "rationale": "Directly describes extracting text from 45 million links, the cleaning/de-duplication process, the resulting 8+ million documents and 40 GB corpus, and Wikipedia removal."
+        },
+        {
+          "chunk_id": "13c8d308bacf1148a7b2eeb84a85032cf87f77d27c4e66bf8c569e9d69da24e6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "16cbcb4b24fad87b3de391d1f9942225313ace2220289f3b74d8f7339e8d5f5e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1ad3910b49831ac245276edef49b76a6adde734b5fc7a2448588bbdf5ae4dc8b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1d3f5ea3f3ad4ef071b2c717cde3c9a42f0756bdc82f715314a6ea21c98e66c9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "247a0bf0d29ccfaf7f6474804a14824f7d21a30290d01f7fae04fba05005dba8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "24891396beccc85cd05e3620f17cda9d7ee71fe5d07b3d665e766209ca102149",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "395ba2f1f13839f2abd54802ba42695dcb1e02a54122d7665742ac92f83e051f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3e1abf31b69dc44b83529da88a3c4bffd41ba7beb28782e4abb93642a736a487",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4d3e42760518cd44eb6b4ee3fd8393b1024ea1df49e439d9db11c004490b42f0",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55a1f3e619c67e2e5e7bc99aa1c0aa9507010e1762b8eacbd35086e0769cab24",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55e31a7708e41250aa70c52a1f2ac211fada12885c57612140eaeec40eba12f4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5642ddc0de14fa96b102e7ebbb1eff036121d34490e0d8eefa6289514d310abc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "66babaa98b23826574307dddeeeaab040883d3c1f34f971eb2bd738af23a45d6",
+          "relevance": 1,
+          "rationale": "Mentions that GPT-2 was trained on WebText but does not explain how the dataset was constructed."
+        },
+        {
+          "chunk_id": "971773bf875c3d9b1c981008f0d331c9d28fb9a4fccb443156c67be564ef4644",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a1615144114ba57666722cf950445974b7102569a921d8c4f43b5e678955becb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a88cf1b6181ea4c1e1412a0b616545563e3904a490df5d37ed40161640570f65",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b83c9830cd91769b001ca662982f4c64d41387cb1b084d454f315515fc8a7982",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cb720b3bdbb83e7552ef43b9eced95fdd5c0693b0af8acdd562a27e44bda01bb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "eb5f72c727e613bbd7cc16c3f43056ed769d7314ac8457547bf87a2a88bb4742",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ed2e2972d20a94464ad2321f7f47c6dd51e0bedc60d9f9d064f2bcb95e54f1ba",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f1d6b2dd56ac08e9dcd637472f8ab4f490ae5f3732ca13b367ec44633fefecf7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f3e3d1dad09b6e6e07acba732a487809f040dc8fcce207e0005d4925999325a4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f47b7d6e892d266ca5cb4933fb63dc257f4e0869ecd96061e4ed6c2b4649a146",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f48e91c40c57154c180baf4a336b033a317ef4799c4382af4b4cfffd3e92858b",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_gpt2_byte_bpe",
+      "query": "Why did GPT-2 use a byte-level BPE representation and restrict merges across character categories?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "0300b2ca8d3608985e602079f97725b46a023253e076315d2bb4b64aec2d6043",
+          "relevance": 2,
+          "rationale": "Explains the motivation for a representation capable of modelling arbitrary Unicode strings and introduces BPE as a middle ground between character- and word-level modelling."
+        },
+        {
+          "chunk_id": "0cf2d3b2d0fed6d69c0239e30dfdc4599ffebead7ddf3fecdbd183f0913887e8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "13c8d308bacf1148a7b2eeb84a85032cf87f77d27c4e66bf8c569e9d69da24e6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "16cbcb4b24fad87b3de391d1f9942225313ace2220289f3b74d8f7339e8d5f5e",
+          "relevance": 3,
+          "rationale": "Directly explains why unrestricted byte-level BPE gives suboptimal merges and why merges across character categories are prevented, with a space exception."
+        },
+        {
+          "chunk_id": "1ad3910b49831ac245276edef49b76a6adde734b5fc7a2448588bbdf5ae4dc8b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1d3f5ea3f3ad4ef071b2c717cde3c9a42f0756bdc82f715314a6ea21c98e66c9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "247a0bf0d29ccfaf7f6474804a14824f7d21a30290d01f7fae04fba05005dba8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "24891396beccc85cd05e3620f17cda9d7ee71fe5d07b3d665e766209ca102149",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "395ba2f1f13839f2abd54802ba42695dcb1e02a54122d7665742ac92f83e051f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3a7d2d2a8344836e35d50b52c56813cdc2c1b5e012ab8d9bb17f01ca72741a0b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3e1abf31b69dc44b83529da88a3c4bffd41ba7beb28782e4abb93642a736a487",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3ecb61c6f5898290f52603cb544fc40a65275bbac6852d8315d47b26c3bb9381",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "48cb257383c2dabf6f550aa4a286d2e0e6143207ab80fb1a6376cb9a100a82c0",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "52c570bc2b9113c7dc8a0fae4d8115dee9563f641a9f5ee0a2fa2a02fef106a4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55a1f3e619c67e2e5e7bc99aa1c0aa9507010e1762b8eacbd35086e0769cab24",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55e31a7708e41250aa70c52a1f2ac211fada12885c57612140eaeec40eba12f4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5642ddc0de14fa96b102e7ebbb1eff036121d34490e0d8eefa6289514d310abc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6afda3265f55247bb6198ae1c0ba4fe3f95d04fedffab4cd275b99a9d8d8dc9b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6c26bdd6488a4fe746519fc911cf091843ac22594ecf9ce39f937da6b62af941",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7c78be824eb2b9dfd836ebe34d6a78cdd2a6c49df02853611572c13e59c3b132",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "82e5a82c0c8b98676d1c6baa6fb9a658c5452c4700054d24d18d527efefe38bd",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8b2f94fddd0b6602f59a90e263f3d1b21b5228d48058f0e1bd4858f00399c895",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a1615144114ba57666722cf950445974b7102569a921d8c4f43b5e678955becb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a88cf1b6181ea4c1e1412a0b616545563e3904a490df5d37ed40161640570f65",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a8cc57d2355216488eb27dc7c3e1f592ffbc0a14b6e438b28ff96971b4be856a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b2429f9aad06ac73fbc21a3936b54ac4cff969b710121f30bd26a608d813bf43",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "c4d64a7b44e1807a670ae11ab7412570ac8579e9db3eef6bd85f45382f5f6d0f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cb720b3bdbb83e7552ef43b9eced95fdd5c0693b0af8acdd562a27e44bda01bb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d73bfafa7d15069b3253082d1ade26d98590f6a59b3df77584b2bcf9affcb372",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d81fbb8104018e1891647ddd6143facc0f8cb01995f8017ea7e267dd1c2ce976",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e056a913bb58b85e4378847baaeb9c1f47c3c7591bbe4f0fbb0cbe5b63cabb77",
+          "relevance": 3,
+          "rationale": "Directly explains why byte-level BPE avoids the huge Unicode base vocabulary and requires only 256 base byte symbols, while introducing the merge issue."
+        },
+        {
+          "chunk_id": "eb5f72c727e613bbd7cc16c3f43056ed769d7314ac8457547bf87a2a88bb4742",
+          "relevance": 1,
+          "rationale": "Notes the resulting ability to assign probability to any Unicode string, but does not explain the BPE design or merge restriction itself."
+        },
+        {
+          "chunk_id": "ec27419f7b36d9ea0705c5624cebbd2ed4ad4a4f7e78f2124dc10e194575099f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ed2e2972d20a94464ad2321f7f47c6dd51e0bedc60d9f9d064f2bcb95e54f1ba",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f47b7d6e892d266ca5cb4933fb63dc257f4e0869ecd96061e4ed6c2b4649a146",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_gpt2_zero_shot_tasks",
+      "query": "Which tasks were used to demonstrate GPT-2's zero-shot capabilities?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "00fe1f13f60de37df8f46e99fd05150de0e309096f8ab593a12572fca5361cd6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "0300b2ca8d3608985e602079f97725b46a023253e076315d2bb4b64aec2d6043",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "0840d6d9ca6b600191d21c33594ae53ad371f498cc9917315ea87330e7e54560",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "0cf2d3b2d0fed6d69c0239e30dfdc4599ffebead7ddf3fecdbd183f0913887e8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "13c8d308bacf1148a7b2eeb84a85032cf87f77d27c4e66bf8c569e9d69da24e6",
+          "relevance": 2,
+          "rationale": "Describes zero-shot summarization and Winograd-style commonsense evaluation, providing useful evidence for the range of demonstrated tasks."
+        },
+        {
+          "chunk_id": "16cbcb4b24fad87b3de391d1f9942225313ace2220289f3b74d8f7339e8d5f5e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1ad3910b49831ac245276edef49b76a6adde734b5fc7a2448588bbdf5ae4dc8b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "247a0bf0d29ccfaf7f6474804a14824f7d21a30290d01f7fae04fba05005dba8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "395ba2f1f13839f2abd54802ba42695dcb1e02a54122d7665742ac92f83e051f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3b87ba348a0a3fd934b4a40f6ddb48a4e9b85684b6ace178b9f1490340e6dd19",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3bceaccd5166baa24fd09e1974063d365ace827a82bcb9e033fee8e41be2e81c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "545c74717c80bdc7e700f8ed26131e9c24d9df80ba2236ab327f28dfc2b6b9b7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55a1f3e619c67e2e5e7bc99aa1c0aa9507010e1762b8eacbd35086e0769cab24",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55e31a7708e41250aa70c52a1f2ac211fada12885c57612140eaeec40eba12f4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "66babaa98b23826574307dddeeeaab040883d3c1f34f971eb2bd738af23a45d6",
+          "relevance": 2,
+          "rationale": "The abstract names question answering, machine translation, reading comprehension and summarization and reports zero-shot behaviour, but it is not the clearest consolidated task list."
+        },
+        {
+          "chunk_id": "7c78be824eb2b9dfd836ebe34d6a78cdd2a6c49df02853611572c13e59c3b132",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7f7cfbb643ee68d877df1c21adc96c297fb9fa38937456a7fc43c42025d999b4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8dc3272679975d1d2f487f0590567c86efb97f4dac12dc52b2aafb87b01ca85e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "95aa81d130d4d32de4034fe17d287ce41bd291bd6dc2a6ad24ffd2d34a6e20a5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "971773bf875c3d9b1c981008f0d331c9d28fb9a4fccb443156c67be564ef4644",
+          "relevance": 1,
+          "rationale": "States that GPT-2 performs a diverse set of tasks in a zero-shot setting but does not enumerate them."
+        },
+        {
+          "chunk_id": "a88cf1b6181ea4c1e1412a0b616545563e3904a490df5d37ed40161640570f65",
+          "relevance": 1,
+          "rationale": "Reports strong zero-shot language-model benchmark performance but only covers one part of the broader task set."
+        },
+        {
+          "chunk_id": "b83c9830cd91769b001ca662982f4c64d41387cb1b084d454f315515fc8a7982",
+          "relevance": 2,
+          "rationale": "Contains zero-shot translation and question-answering results, supporting two of the demonstrated task types."
+        },
+        {
+          "chunk_id": "cb720b3bdbb83e7552ef43b9eced95fdd5c0693b0af8acdd562a27e44bda01bb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d73bfafa7d15069b3253082d1ade26d98590f6a59b3df77584b2bcf9affcb372",
+          "relevance": 2,
+          "rationale": "Describes zero-shot CoQA reading comprehension and translation experiments, covering two important task types."
+        },
+        {
+          "chunk_id": "e056a913bb58b85e4378847baaeb9c1f47c3c7591bbe4f0fbb0cbe5b63cabb77",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ec27419f7b36d9ea0705c5624cebbd2ed4ad4a4f7e78f2124dc10e194575099f",
+          "relevance": 2,
+          "rationale": "Describes LAMBADA/long-range prediction evaluation and related language-model behaviour, supporting another zero-shot capability."
+        },
+        {
+          "chunk_id": "ed2e2972d20a94464ad2321f7f47c6dd51e0bedc60d9f9d064f2bcb95e54f1ba",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ed4e5cb659fb556385e4a99ba4019dd8d8cce5585fa34f95d529e8f9a81a7ba1",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f1d6b2dd56ac08e9dcd637472f8ab4f490ae5f3732ca13b367ec44633fefecf7",
+          "relevance": 3,
+          "rationale": "Directly summarizes the major demonstrated zero-shot tasks: CoQA reading comprehension, WMT-14 translation, CNN/Daily Mail summarization, and Natural Questions question answering."
+        },
+        {
+          "chunk_id": "f3e3d1dad09b6e6e07acba732a487809f040dc8fcce207e0005d4925999325a4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f48e91c40c57154c180baf4a336b033a317ef4799c4382af4b4cfffd3e92858b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "fbe42b7ebe18b83fb7e31176dc5644be936d3f13bd46de9b9d5955c0fc3027c5",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_gpt2_model_scale",
+      "query": "What model sizes were benchmarked, and how large was the largest GPT-2 model?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "0300b2ca8d3608985e602079f97725b46a023253e076315d2bb4b64aec2d6043",
+          "relevance": 3,
+          "rationale": "Directly lists the four benchmarked model sizes—117M, 345M, 762M and 1542M parameters—together with layers and model dimensions."
+        },
+        {
+          "chunk_id": "13c8d308bacf1148a7b2eeb84a85032cf87f77d27c4e66bf8c569e9d69da24e6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "16cbcb4b24fad87b3de391d1f9942225313ace2220289f3b74d8f7339e8d5f5e",
+          "relevance": 1,
+          "rationale": "States that GPT-2 is much larger than GPT but does not provide the full benchmarked size set."
+        },
+        {
+          "chunk_id": "176d1d57fbd3502c591609cddb4bee080be5d69dc231b2655ea98a04cb9c7ab8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1ad3910b49831ac245276edef49b76a6adde734b5fc7a2448588bbdf5ae4dc8b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1d3f5ea3f3ad4ef071b2c717cde3c9a42f0756bdc82f715314a6ea21c98e66c9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "247a0bf0d29ccfaf7f6474804a14824f7d21a30290d01f7fae04fba05005dba8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "24891396beccc85cd05e3620f17cda9d7ee71fe5d07b3d665e766209ca102149",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "32ef675a2138a3f09675606d41dcf25e246a200ba2e5062a0ca8e05ff7fa93d6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "395ba2f1f13839f2abd54802ba42695dcb1e02a54122d7665742ac92f83e051f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3a7d2d2a8344836e35d50b52c56813cdc2c1b5e012ab8d9bb17f01ca72741a0b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3e1abf31b69dc44b83529da88a3c4bffd41ba7beb28782e4abb93642a736a487",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55a1f3e619c67e2e5e7bc99aa1c0aa9507010e1762b8eacbd35086e0769cab24",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55e31a7708e41250aa70c52a1f2ac211fada12885c57612140eaeec40eba12f4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5642ddc0de14fa96b102e7ebbb1eff036121d34490e0d8eefa6289514d310abc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "57b5c3b423c6580beb1666373285fcd4d1c543c2e42dae40fb02a0d7aabd068b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5f20eaf10e9deb8932d6ea3ec36ab219baaac04e09a0766f3eed7416289d4ad0",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6a4f38595afb108c917146a833b058da01bf7a0d4affeadb41f06b1593666ff2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7c338d83cc4734bc456affde5e06f95207387aa5c0d4579657d007a43aaaa84d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7c78be824eb2b9dfd836ebe34d6a78cdd2a6c49df02853611572c13e59c3b132",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "82e5a82c0c8b98676d1c6baa6fb9a658c5452c4700054d24d18d527efefe38bd",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "84f50f93674d06ff7c02f3c622616ebb8ba680409d471d0955a9f79987db8e94",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8c46bf307f7e993e7a9b4e5453a91508843c98e7ed52cf3fc5cf32d9ad4a3301",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8dc3272679975d1d2f487f0590567c86efb97f4dac12dc52b2aafb87b01ca85e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "95aa81d130d4d32de4034fe17d287ce41bd291bd6dc2a6ad24ffd2d34a6e20a5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "971773bf875c3d9b1c981008f0d331c9d28fb9a4fccb443156c67be564ef4644",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a0a8efc385645ca86d183d8ebe521140ac194795f059b6423d5448af2014a535",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a88cf1b6181ea4c1e1412a0b616545563e3904a490df5d37ed40161640570f65",
+          "relevance": 2,
+          "rationale": "Directly states that the largest GPT-2 model is a 1.5B-parameter Transformer, but does not list all four benchmarked sizes."
+        },
+        {
+          "chunk_id": "b83c9830cd91769b001ca662982f4c64d41387cb1b084d454f315515fc8a7982",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "c51677f3dc99090135cde68b096e98553a0364a238cecd2e4264c3a9f93eb5e6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cb4881321e34fbabcec3f716dbd08f8d1355ac1b96815c0e15a5ec9feefb4ce7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cb720b3bdbb83e7552ef43b9eced95fdd5c0693b0af8acdd562a27e44bda01bb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cf51357b26d7e133fb4e293ebcef32a8a94cbf81afcee9806bf19382e739e907",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d73bfafa7d15069b3253082d1ade26d98590f6a59b3df77584b2bcf9affcb372",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e056a913bb58b85e4378847baaeb9c1f47c3c7591bbe4f0fbb0cbe5b63cabb77",
+          "relevance": 2,
+          "rationale": "States that four model sizes were benchmarked and that the largest GPT-2 model is substantially larger than GPT, but the full numeric size list is in the adjacent chunk."
+        },
+        {
+          "chunk_id": "ec27419f7b36d9ea0705c5624cebbd2ed4ad4a4f7e78f2124dc10e194575099f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ed2e2972d20a94464ad2321f7f47c6dd51e0bedc60d9f9d064f2bcb95e54f1ba",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f1d6b2dd56ac08e9dcd637472f8ab4f490ae5f3732ca13b367ec44633fefecf7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f47b7d6e892d266ca5cb4933fb63dc257f4e0869ecd96061e4ed6c2b4649a146",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f9dd9f296bff3c7ecca6542e8bba9b549ea43a47f73e6f82adc1dc532339dfa6",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "holdout_gpt2_translation_result",
+      "query": "How well did GPT-2 perform on the WMT-14 French-English translation test set?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "0077ac96aaa8ac410144aa5618ed159e63b8133bc9b04a78e8aa08902644ae3d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "176d1d57fbd3502c591609cddb4bee080be5d69dc231b2655ea98a04cb9c7ab8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1ad3910b49831ac245276edef49b76a6adde734b5fc7a2448588bbdf5ae4dc8b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1d3f5ea3f3ad4ef071b2c717cde3c9a42f0756bdc82f715314a6ea21c98e66c9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "247a0bf0d29ccfaf7f6474804a14824f7d21a30290d01f7fae04fba05005dba8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "24891396beccc85cd05e3620f17cda9d7ee71fe5d07b3d665e766209ca102149",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "395ba2f1f13839f2abd54802ba42695dcb1e02a54122d7665742ac92f83e051f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3a7d2d2a8344836e35d50b52c56813cdc2c1b5e012ab8d9bb17f01ca72741a0b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3e1abf31b69dc44b83529da88a3c4bffd41ba7beb28782e4abb93642a736a487",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "545c74717c80bdc7e700f8ed26131e9c24d9df80ba2236ab327f28dfc2b6b9b7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55a1f3e619c67e2e5e7bc99aa1c0aa9507010e1762b8eacbd35086e0769cab24",
+          "relevance": 1,
+          "rationale": "Comments generally on GPT-2 translation performance but does not report the requested WMT-14 French-English result."
+        },
+        {
+          "chunk_id": "55e31a7708e41250aa70c52a1f2ac211fada12885c57612140eaeec40eba12f4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5642ddc0de14fa96b102e7ebbb1eff036121d34490e0d8eefa6289514d310abc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "66babaa98b23826574307dddeeeaab040883d3c1f34f971eb2bd738af23a45d6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6afda3265f55247bb6198ae1c0ba4fe3f95d04fedffab4cd275b99a9d8d8dc9b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7c338d83cc4734bc456affde5e06f95207387aa5c0d4579657d007a43aaaa84d",
+          "relevance": 3,
+          "rationale": "Directly reports 11.5 BLEU on the WMT-14 French-English test set and compares it with unsupervised baselines and the stronger 33.5-BLEU system."
+        },
+        {
+          "chunk_id": "7f7cfbb643ee68d877df1c21adc96c297fb9fa38937456a7fc43c42025d999b4",
+          "relevance": 1,
+          "rationale": "Reports the opposite English-French direction at 5 BLEU, which is related translation evidence but not the requested French-English result."
+        },
+        {
+          "chunk_id": "82e5a82c0c8b98676d1c6baa6fb9a658c5452c4700054d24d18d527efefe38bd",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8dc3272679975d1d2f487f0590567c86efb97f4dac12dc52b2aafb87b01ca85e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "971773bf875c3d9b1c981008f0d331c9d28fb9a4fccb443156c67be564ef4644",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a0a8efc385645ca86d183d8ebe521140ac194795f059b6423d5448af2014a535",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a1615144114ba57666722cf950445974b7102569a921d8c4f43b5e678955becb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a88cf1b6181ea4c1e1412a0b616545563e3904a490df5d37ed40161640570f65",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b83c9830cd91769b001ca662982f4c64d41387cb1b084d454f315515fc8a7982",
+          "relevance": 3,
+          "rationale": "Directly gives the 11.5 BLEU French-English result and its comparison with prior unsupervised translation systems."
+        },
+        {
+          "chunk_id": "cb720b3bdbb83e7552ef43b9eced95fdd5c0693b0af8acdd562a27e44bda01bb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d73bfafa7d15069b3253082d1ade26d98590f6a59b3df77584b2bcf9affcb372",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ec27419f7b36d9ea0705c5624cebbd2ed4ad4a4f7e78f2124dc10e194575099f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ed2e2972d20a94464ad2321f7f47c6dd51e0bedc60d9f9d064f2bcb95e54f1ba",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ed4e5cb659fb556385e4a99ba4019dd8d8cce5585fa34f95d529e8f9a81a7ba1",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f1d6b2dd56ac08e9dcd637472f8ab4f490ae5f3732ca13b367ec44633fefecf7",
+          "relevance": 1,
+          "rationale": "Identifies WMT-14 French-English as a zero-shot translation task but does not provide the performance value."
+        },
+        {
+          "chunk_id": "f47b7d6e892d266ca5cb4933fb63dc257f4e0869ecd96061e4ed6c2b4649a146",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "holdout_gpt2_natural_questions",
+      "query": "How did GPT-2 perform on Natural Questions in the zero-shot question-answering evaluation?",
+      "document_id": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "0840d6d9ca6b600191d21c33594ae53ad371f498cc9917315ea87330e7e54560",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "13c8d308bacf1148a7b2eeb84a85032cf87f77d27c4e66bf8c569e9d69da24e6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1ad3910b49831ac245276edef49b76a6adde734b5fc7a2448588bbdf5ae4dc8b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1d3f5ea3f3ad4ef071b2c717cde3c9a42f0756bdc82f715314a6ea21c98e66c9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "247a0bf0d29ccfaf7f6474804a14824f7d21a30290d01f7fae04fba05005dba8",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "24891396beccc85cd05e3620f17cda9d7ee71fe5d07b3d665e766209ca102149",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "395ba2f1f13839f2abd54802ba42695dcb1e02a54122d7665742ac92f83e051f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3a7d2d2a8344836e35d50b52c56813cdc2c1b5e012ab8d9bb17f01ca72741a0b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3e1abf31b69dc44b83529da88a3c4bffd41ba7beb28782e4abb93642a736a487",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4d3e42760518cd44eb6b4ee3fd8393b1024ea1df49e439d9db11c004490b42f0",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "55a1f3e619c67e2e5e7bc99aa1c0aa9507010e1762b8eacbd35086e0769cab24",
+          "relevance": 1,
+          "rationale": "Discusses question answering performance broadly but does not provide the Natural Questions result."
+        },
+        {
+          "chunk_id": "5642ddc0de14fa96b102e7ebbb1eff036121d34490e0d8eefa6289514d310abc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5e01dfe9519f5d00541bd9b9ebb6562c9887cbf42c48d8cab13c46dd52605b6c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5f20eaf10e9deb8932d6ea3ec36ab219baaac04e09a0766f3eed7416289d4ad0",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "66babaa98b23826574307dddeeeaab040883d3c1f34f971eb2bd738af23a45d6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7c338d83cc4734bc456affde5e06f95207387aa5c0d4579657d007a43aaaa84d",
+          "relevance": 1,
+          "rationale": "Contains example generated question answers rather than the aggregate Natural Questions evaluation result."
+        },
+        {
+          "chunk_id": "7f7cfbb643ee68d877df1c21adc96c297fb9fa38937456a7fc43c42025d999b4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8dc3272679975d1d2f487f0590567c86efb97f4dac12dc52b2aafb87b01ca85e",
+          "relevance": 2,
+          "rationale": "Identifies Natural Questions and reports the 63.1% accuracy among the 1% most-confident answers, but omits the headline 4.1% exact-match result."
+        },
+        {
+          "chunk_id": "971773bf875c3d9b1c981008f0d331c9d28fb9a4fccb443156c67be564ef4644",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a0a8efc385645ca86d183d8ebe521140ac194795f059b6423d5448af2014a535",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a1615144114ba57666722cf950445974b7102569a921d8c4f43b5e678955becb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a88cf1b6181ea4c1e1412a0b616545563e3904a490df5d37ed40161640570f65",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "a8cc57d2355216488eb27dc7c3e1f592ffbc0a14b6e438b28ff96971b4be856a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ae95b2e543f75f08116eaa178f0547433156d1b14dbd343449caff6272257225",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b83c9830cd91769b001ca662982f4c64d41387cb1b084d454f315515fc8a7982",
+          "relevance": 3,
+          "rationale": "Directly reports 4.1% exact-match accuracy on Natural Questions, the comparison with the 1% baseline, and 63.1% accuracy for the most-confident 1%."
+        },
+        {
+          "chunk_id": "cb720b3bdbb83e7552ef43b9eced95fdd5c0693b0af8acdd562a27e44bda01bb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d73bfafa7d15069b3253082d1ade26d98590f6a59b3df77584b2bcf9affcb372",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ec27419f7b36d9ea0705c5624cebbd2ed4ad4a4f7e78f2124dc10e194575099f",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ed2e2972d20a94464ad2321f7f47c6dd51e0bedc60d9f9d064f2bcb95e54f1ba",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ed4e5cb659fb556385e4a99ba4019dd8d8cce5585fa34f95d529e8f9a81a7ba1",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f1d6b2dd56ac08e9dcd637472f8ab4f490ae5f3732ca13b367ec44633fefecf7",
+          "relevance": 1,
+          "rationale": "Identifies Natural Questions as the question-answering benchmark but does not report how GPT-2 performed."
+        },
+        {
+          "chunk_id": "f47b7d6e892d266ca5cb4933fb63dc257f4e0869ecd96061e4ed6c2b4649a146",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_scale_primary_factors",
+      "query": "Which factors most strongly determine language-model performance according to the scaling-law study?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "0e31e365d99f645f362c4f4658fd92591fb769a1ba9e858057d951d8d4449086",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "1680a3e034821eb06a415ee32e45c26e15ed5762c677175e6f72dedde7680992",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "24f42e872d56aac84adc4ec9be3337d173045620a0ad90591612c8fbfbc9c07d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3960ea974d233aa945148d35b5c1a6f17fa63c267f4ebdf40cd3417c3ea7a1a6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3f196c5e41ab0f3c7c1012ff790f223125f23d1d6a3a3e3d7d728a3041404039",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "47f252dd0cb8c3ab00f92b2e4777968188ede83c2db742852022c847947719bd",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4a403ababd48090ecdc0e91538a8943e22cd85a0407b97dd80b9ef5eea11d007",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4b04619fd2a8b2f83f7db0784b499b1a5a15922698a8ef773c038838403b6b0b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5b3192af76ee1af3b9c1243e18142a8aad351ded02e925791471cc54a0928577",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5cb1cb60b97be2c6f3bb1067b49db27821cefc30bf333f4655476a8ee4ce2a88",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "60637d677a0eb9600f3cb768f317bdf8e996a0eae7d0b9889d63930b3666554e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6331eb0fb5ecd7e1c6f6143edb06788871bd2997c794b36c4de5f6bf9f2bf1b1",
+          "relevance": 2,
+          "rationale": "Shows scaling across model/data/compute and notes weak dependence on model shape, providing strong supporting evidence."
+        },
+        {
+          "chunk_id": "669ac3cb98d449defc1acd84e4a827986c356c8601cbff18c5bf6e2f0a0179dc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6a2db3219fd05c0eaadf4e7733e01d17b2ecfa1d50b9270126294851975e4330",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6bda261a9f775ec6dcbe1093f1e4ad678fe814eb29522b273932ac7e18cb76e1",
+          "relevance": 3,
+          "rationale": "The abstract directly states that loss follows power laws with model size, dataset size and compute while width/depth have comparatively small effects."
+        },
+        {
+          "chunk_id": "74dbcdf8bacfdaad689656a7b372cce082ba09895ce909e40fbf2a8acf4a715d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8295a6630b3f668ab57be6d3c6da66c6b5d052915be1d679c1e842105b24041a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "83bda033bd813ae26c6d1e9a17788d812f847319cb6470664223c52a47988a2e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8dc18a5b90ce08be5636efa0fb785d769ffadae8de2efe4ca98f95ac291418a0",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "91e572796a7f5564e7ac9df87dcf4f0dace4e9208b0c5764340c4c1f25fdfe0b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "9bccd298b8ecd6c10d9651904eaff22940c73bc2f205ee6dc29c8e28fc126864",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "aba59b07f75171d676d18bce6f4f092f8bb488c23120685d6f199624351f6edf",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "af24c127ea22c6cff1c6fa6964698363ae031adadd479b92141d1550e8a1319b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b082141cbc4b0318030292b8902557f3105c999442e70b399d185abea426bf56",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "c686ed089bae49f1d310d810f95871371e8874972d024fcb79a702e0da7880a5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ca65dce856abc201dbf0a834fc64ee26ba519fa05be6fdc45050bf76f67b9d6d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cbf2b7794ed47c1ca5da6c3fe5613f4941ae051ad80e98da37b2e255cb403d1d",
+          "relevance": 1,
+          "rationale": "Frames model architecture, model size, compute and data as factors to investigate, but does not yet state which dominate."
+        },
+        {
+          "chunk_id": "d36cea5f3c2e15925ba5653efa20ef087aaa925eb6a298171756775f14ce2bb3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d726f5918bfa2dc07ee7ce5e19e1387d432f2dcb06bfedd2d96da354dcfb1192",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e1c52176e47daacd544cb13b86c22b4bbff0120fa024717b520eafb27c4a4d31",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e3aada170d657eafb3dc1cecfb31f4c24085f734610550016515720283bd9f81",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e5044cce73dc56638f06ff80f5f0ac3182eb635acba55558b2ec8f30e5e56fd3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "f39f05474057b27d9785ffa9970cb268e57608ec53d44eb69c615fe357b8aea2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "fc1830e97e8afa417143c19d0b6e7cbff8785c13418971112b31457f8a4fae00",
+          "relevance": 3,
+          "rationale": "Directly states that performance depends most strongly on model parameters, dataset size and compute, while model shape matters much less."
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_scale_compute_efficient_training",
+      "query": "Why does compute-efficient training favor very large models that stop well before convergence?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "1680a3e034821eb06a415ee32e45c26e15ed5762c677175e6f72dedde7680992",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3f196c5e41ab0f3c7c1012ff790f223125f23d1d6a3a3e3d7d728a3041404039",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "50e298c95148b0618c33d65f4b9fb9d4824491da1c7fc4821a8c01e098e7ae4b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5a85eb6eaddaf656ed5d7de4999fc2ff71ecbb0f57a998aa93d82415160eb0e3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5b3192af76ee1af3b9c1243e18142a8aad351ded02e925791471cc54a0928577",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5cb1cb60b97be2c6f3bb1067b49db27821cefc30bf333f4655476a8ee4ce2a88",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "60637d677a0eb9600f3cb768f317bdf8e996a0eae7d0b9889d63930b3666554e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "62fbc6a0af0ada48e693ddde29e957ac5132c572e139ac73d9b39b7aa25fb3ce",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "669ac3cb98d449defc1acd84e4a827986c356c8601cbff18c5bf6e2f0a0179dc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "68cbbf6fea5bb27cda2e3b9bee9d580abd1e83cfd72dd014f643298cb84a770c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6bda261a9f775ec6dcbe1093f1e4ad678fe814eb29522b273932ac7e18cb76e1",
+          "relevance": 3,
+          "rationale": "The abstract directly states that larger models are more sample-efficient and that compute-efficient training uses very large models, modest data, and stops well before convergence."
+        },
+        {
+          "chunk_id": "74dbcdf8bacfdaad689656a7b372cce082ba09895ce909e40fbf2a8acf4a715d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7b35352fa59c268d033bf5126a7d4094ecc876520b1921a15881ff2356e8a05b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7d0f421bb242dfafb3569ed4dbb15de3b6656058aefa1913f0e85720b0085bc4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8295a6630b3f668ab57be6d3c6da66c6b5d052915be1d679c1e842105b24041a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8dc18a5b90ce08be5636efa0fb785d769ffadae8de2efe4ca98f95ac291418a0",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "92eba056bc490d7b6c42db5420d5c33df48cde6b43ad9b1180c678ae485e71c7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "95d348c3d301fdbd2edd776f08d6289e64e130857108f32b74a30fbdf8e40150",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ab5f0bf193ac14d824fd52abefe679e1384743cc604d34a9f32351695bbfd433",
+          "relevance": 2,
+          "rationale": "Quantifies why the compute-efficient regime uses larger models and far fewer parameter updates than near-converged training, strongly supporting the explanation."
+        },
+        {
+          "chunk_id": "bbe8180c144a831e924013611349f3b58e25b1ec96987c3c5e22898d0b923154",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "c686ed089bae49f1d310d810f95871371e8874972d024fcb79a702e0da7880a5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ccb86aaf4b13bca73533c384324719205e19a0930f9e09ce9031312bc1de6cc4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d3b36e8851ae296d4858db34a21e8f2809379f013ab0e756d1c3b0572a68c884",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d726f5918bfa2dc07ee7ce5e19e1387d432f2dcb06bfedd2d96da354dcfb1192",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d77b2dd689acb7529d85e6498f38acf5f96f61468454a73f8ddf77c59ea94931",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "db8ea1bef8fcc790572919519f06a82e8316366162ce4eee22d0a0b5efde3275",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "dd9b27ae3adf8c09e5cbe0d462f2a1a71c9c05a13bd59c7fa8fccc00de1a17c2",
+          "relevance": 3,
+          "rationale": "Directly explains that under a fixed compute budget the optimum uses very large models stopped significantly before convergence because large models are more sample-efficient."
+        },
+        {
+          "chunk_id": "e1c52176e47daacd544cb13b86c22b4bbff0120fa024717b520eafb27c4a4d31",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e3aada170d657eafb3dc1cecfb31f4c24085f734610550016515720283bd9f81",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e5044cce73dc56638f06ff80f5f0ac3182eb635acba55558b2ec8f30e5e56fd3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e6945aeca3527d263ac70976ed40b0369e966a483f770c0d5376bb6b10fee454",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "fc1830e97e8afa417143c19d0b6e7cbff8785c13418971112b31457f8a4fae00",
+          "relevance": 1,
+          "rationale": "Explains the primary scale factors but does not directly explain why early-stopped very large models are compute-efficient."
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_scale_training_procedure",
+      "query": "What optimizer, batch setup, warmup, and learning-rate schedule were used in the scaling-law experiments?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "1680a3e034821eb06a415ee32e45c26e15ed5762c677175e6f72dedde7680992",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "193b1f8adc6f284a140e04fb0c95ac636370b04f1cee0e579aac3c03349232cb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3960ea974d233aa945148d35b5c1a6f17fa63c267f4ebdf40cd3417c3ea7a1a6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "47f252dd0cb8c3ab00f92b2e4777968188ede83c2db742852022c847947719bd",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4a0907a295068cc32a6c7a9e65248605e054619553a2627292dd1faf3ce1dd2a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "50e298c95148b0618c33d65f4b9fb9d4824491da1c7fc4821a8c01e098e7ae4b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5a85eb6eaddaf656ed5d7de4999fc2ff71ecbb0f57a998aa93d82415160eb0e3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5cb1cb60b97be2c6f3bb1067b49db27821cefc30bf333f4655476a8ee4ce2a88",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "62fbc6a0af0ada48e693ddde29e957ac5132c572e139ac73d9b39b7aa25fb3ce",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "65b53dfbf2dbef59d128c24dabd5582f045489f5cc0b70d3da439499cbf9dc74",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "669ac3cb98d449defc1acd84e4a827986c356c8601cbff18c5bf6e2f0a0179dc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "68cbbf6fea5bb27cda2e3b9bee9d580abd1e83cfd72dd014f643298cb84a770c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6a2db3219fd05c0eaadf4e7733e01d17b2ecfa1d50b9270126294851975e4330",
+          "relevance": 3,
+          "rationale": "Directly gives the 3000-step linear warmup followed by cosine decay to zero and notes Adafactor for models above 1B parameters."
+        },
+        {
+          "chunk_id": "6bda261a9f775ec6dcbe1093f1e4ad678fe814eb29522b273932ac7e18cb76e1",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "74dbcdf8bacfdaad689656a7b372cce082ba09895ce909e40fbf2a8acf4a715d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7b35352fa59c268d033bf5126a7d4094ecc876520b1921a15881ff2356e8a05b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7d0f421bb242dfafb3569ed4dbb15de3b6656058aefa1913f0e85720b0085bc4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8295a6630b3f668ab57be6d3c6da66c6b5d052915be1d679c1e842105b24041a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "86703252688268f658d867cb8af9b4410cf773ccb573c2e3c1447a8d74d2f8c7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "92eba056bc490d7b6c42db5420d5c33df48cde6b43ad9b1180c678ae485e71c7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "95d348c3d301fdbd2edd776f08d6289e64e130857108f32b74a30fbdf8e40150",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ab5f0bf193ac14d824fd52abefe679e1384743cc604d34a9f32351695bbfd433",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b45a7ff2819d5b63151d34be62ea7fcf012a8aee31fd5c4c26977b3b47d00912",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b48d291f9c393661934f36904098f5ef1f59ecb7736a305a20378623b0201cef",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "bf4561bb59a7632f0ea1a35977e0a5f892677c5035889e9019ffe2ea07480cf9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "c1e1b72a08bcb450c2c6c314171cbdcbf7b41f61780adc4dc39918dc95bf7459",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "c686ed089bae49f1d310d810f95871371e8874972d024fcb79a702e0da7880a5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "c83fa1adcaafad9dd59ccfa1ad315ef079a1c8d80802e366fb86ea51a1e48de9",
+          "relevance": 3,
+          "rationale": "Directly specifies Adam, 250k steps, batches of 512 sequences of 1024 tokens, and the Adafactor exception; together with the adjacent schedule chunk this fully supports the procedure."
+        },
+        {
+          "chunk_id": "d36cea5f3c2e15925ba5653efa20ef087aaa925eb6a298171756775f14ce2bb3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d726f5918bfa2dc07ee7ce5e19e1387d432f2dcb06bfedd2d96da354dcfb1192",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d77b2dd689acb7529d85e6498f38acf5f96f61468454a73f8ddf77c59ea94931",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "db8ea1bef8fcc790572919519f06a82e8316366162ce4eee22d0a0b5efde3275",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "dd9b27ae3adf8c09e5cbe0d462f2a1a71c9c05a13bd59c7fa8fccc00de1a17c2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e3aada170d657eafb3dc1cecfb31f4c24085f734610550016515720283bd9f81",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e5044cce73dc56638f06ff80f5f0ac3182eb635acba55558b2ec8f30e5e56fd3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e6945aeca3527d263ac70976ed40b0369e966a483f770c0d5376bb6b10fee454",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "fc1830e97e8afa417143c19d0b6e7cbff8785c13418971112b31457f8a4fae00",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ffaecbab2fdaaa6e37ebec38c493022ec22f94b0d94fe27610a2ccb00a5f0ba1",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "dev_scale_webtext2_stats",
+      "query": "How large was WebText2, and which additional text distributions were used for testing?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "20085087b136857edf5e39aa3a210f4e03e42e76deb98285ec8318d38fb1a4de",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "24f42e872d56aac84adc4ec9be3337d173045620a0ad90591612c8fbfbc9c07d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3960ea974d233aa945148d35b5c1a6f17fa63c267f4ebdf40cd3417c3ea7a1a6",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3f196c5e41ab0f3c7c1012ff790f223125f23d1d6a3a3e3d7d728a3041404039",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4a0907a295068cc32a6c7a9e65248605e054619553a2627292dd1faf3ce1dd2a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4a403ababd48090ecdc0e91538a8943e22cd85a0407b97dd80b9ef5eea11d007",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4b04619fd2a8b2f83f7db0784b499b1a5a15922698a8ef773c038838403b6b0b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4f2a7593330b4e519db736ab97377e133f63097843cc5adc7a6e904125509c8d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "50e298c95148b0618c33d65f4b9fb9d4824491da1c7fc4821a8c01e098e7ae4b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5a85eb6eaddaf656ed5d7de4999fc2ff71ecbb0f57a998aa93d82415160eb0e3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5b3192af76ee1af3b9c1243e18142a8aad351ded02e925791471cc54a0928577",
+          "relevance": 2,
+          "rationale": "Shows the additional evaluation distributions—Books, Internet Books, Wikipedia and Common Crawl—but does not provide WebText2 corpus-size statistics."
+        },
+        {
+          "chunk_id": "5bd7f100f708dcb0f610fb211def2d4095fd752c5a1fabd006073732ec35e36c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "60637d677a0eb9600f3cb768f317bdf8e996a0eae7d0b9889d63930b3666554e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6331eb0fb5ecd7e1c6f6143edb06788871bd2997c794b36c4de5f6bf9f2bf1b1",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "669ac3cb98d449defc1acd84e4a827986c356c8601cbff18c5bf6e2f0a0179dc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6a2db3219fd05c0eaadf4e7733e01d17b2ecfa1d50b9270126294851975e4330",
+          "relevance": 3,
+          "rationale": "Directly gives WebText2's 20.3M documents, 96 GB, 22.9B tokens, held-out test tokens, and the additional Books Corpus, Common Crawl, English Wikipedia and Internet Books test distributions."
+        },
+        {
+          "chunk_id": "74dbcdf8bacfdaad689656a7b372cce082ba09895ce909e40fbf2a8acf4a715d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7b35352fa59c268d033bf5126a7d4094ecc876520b1921a15881ff2356e8a05b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "86703252688268f658d867cb8af9b4410cf773ccb573c2e3c1447a8d74d2f8c7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8dc18a5b90ce08be5636efa0fb785d769ffadae8de2efe4ca98f95ac291418a0",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8fef8b49cd3cdff00889f11c6a19440011fbaaabba6aa3fd5e61d3c731255d78",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "92eba056bc490d7b6c42db5420d5c33df48cde6b43ad9b1180c678ae485e71c7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "aba59b07f75171d676d18bce6f4f092f8bb488c23120685d6f199624351f6edf",
+          "relevance": 2,
+          "rationale": "Continues the list of external evaluation distributions and gives the experiment's model/data ranges, but omits most WebText2 size statistics."
+        },
+        {
+          "chunk_id": "af24c127ea22c6cff1c6fa6964698363ae031adadd479b92141d1550e8a1319b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b082141cbc4b0318030292b8902557f3105c999442e70b399d185abea426bf56",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "bf4561bb59a7632f0ea1a35977e0a5f892677c5035889e9019ffe2ea07480cf9",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "cbf2b7794ed47c1ca5da6c3fe5613f4941ae051ad80e98da37b2e255cb403d1d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ccb86aaf4b13bca73533c384324719205e19a0930f9e09ce9031312bc1de6cc4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d36cea5f3c2e15925ba5653efa20ef087aaa925eb6a298171756775f14ce2bb3",
+          "relevance": 2,
+          "rationale": "Shows evaluation on Wikipedia, Books, Internet Books, Common Crawl and WebText2, supporting the additional-distribution part of the question."
+        },
+        {
+          "chunk_id": "db8ea1bef8fcc790572919519f06a82e8316366162ce4eee22d0a0b5efde3275",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "dd9b27ae3adf8c09e5cbe0d462f2a1a71c9c05a13bd59c7fa8fccc00de1a17c2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e3aada170d657eafb3dc1cecfb31f4c24085f734610550016515720283bd9f81",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "fc1830e97e8afa417143c19d0b6e7cbff8785c13418971112b31457f8a4fae00",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "holdout_scale_overfitting_relation",
+      "query": "How should dataset size grow with model size to avoid an overfitting penalty?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "24f42e872d56aac84adc4ec9be3337d173045620a0ad90591612c8fbfbc9c07d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "3f196c5e41ab0f3c7c1012ff790f223125f23d1d6a3a3e3d7d728a3041404039",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "47f252dd0cb8c3ab00f92b2e4777968188ede83c2db742852022c847947719bd",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4a0907a295068cc32a6c7a9e65248605e054619553a2627292dd1faf3ce1dd2a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4a403ababd48090ecdc0e91538a8943e22cd85a0407b97dd80b9ef5eea11d007",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "50e298c95148b0618c33d65f4b9fb9d4824491da1c7fc4821a8c01e098e7ae4b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5a85eb6eaddaf656ed5d7de4999fc2ff71ecbb0f57a998aa93d82415160eb0e3",
+          "relevance": 3,
+          "rationale": "Directly gives the empirical requirement that dataset size scale approximately with N^0.74 to avoid overfitting near convergence."
+        },
+        {
+          "chunk_id": "5bd7f100f708dcb0f610fb211def2d4095fd752c5a1fabd006073732ec35e36c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "60637d677a0eb9600f3cb768f317bdf8e996a0eae7d0b9889d63930b3666554e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "62fbc6a0af0ada48e693ddde29e957ac5132c572e139ac73d9b39b7aa25fb3ce",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "6331eb0fb5ecd7e1c6f6143edb06788871bd2997c794b36c4de5f6bf9f2bf1b1",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "669ac3cb98d449defc1acd84e4a827986c356c8601cbff18c5bf6e2f0a0179dc",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7b35352fa59c268d033bf5126a7d4094ecc876520b1921a15881ff2356e8a05b",
+          "relevance": 2,
+          "rationale": "States that dataset size can grow sublinearly with model size while avoiding overfitting, but the precise scaling relation is truncated from the chunk."
+        },
+        {
+          "chunk_id": "8295a6630b3f668ab57be6d3c6da66c6b5d052915be1d679c1e842105b24041a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8dc18a5b90ce08be5636efa0fb785d769ffadae8de2efe4ca98f95ac291418a0",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8fef8b49cd3cdff00889f11c6a19440011fbaaabba6aa3fd5e61d3c731255d78",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "92eba056bc490d7b6c42db5420d5c33df48cde6b43ad9b1180c678ae485e71c7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "95d348c3d301fdbd2edd776f08d6289e64e130857108f32b74a30fbdf8e40150",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b48d291f9c393661934f36904098f5ef1f59ecb7736a305a20378623b0201cef",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ca65dce856abc201dbf0a834fc64ee26ba519fa05be6fdc45050bf76f67b9d6d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "ccb86aaf4b13bca73533c384324719205e19a0930f9e09ce9031312bc1de6cc4",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d36cea5f3c2e15925ba5653efa20ef087aaa925eb6a298171756775f14ce2bb3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d726f5918bfa2dc07ee7ce5e19e1387d432f2dcb06bfedd2d96da354dcfb1192",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d77b2dd689acb7529d85e6498f38acf5f96f61468454a73f8ddf77c59ea94931",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "db8ea1bef8fcc790572919519f06a82e8316366162ce4eee22d0a0b5efde3275",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "dd9b27ae3adf8c09e5cbe0d462f2a1a71c9c05a13bd59c7fa8fccc00de1a17c2",
+          "relevance": 3,
+          "rationale": "Directly summarizes that increasing model size eightfold requires only about a fivefold data increase to avoid the overfitting penalty."
+        },
+        {
+          "chunk_id": "e3aada170d657eafb3dc1cecfb31f4c24085f734610550016515720283bd9f81",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e5044cce73dc56638f06ff80f5f0ac3182eb635acba55558b2ec8f30e5e56fd3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "fc1830e97e8afa417143c19d0b6e7cbff8785c13418971112b31457f8a4fae00",
+          "relevance": 3,
+          "rationale": "Directly states the N^0.74/D dependence and the equivalent rule that an 8x model-size increase needs roughly 5x more data."
+        }
+      ],
+      "tags": [],
+      "notes": null
+    },
+    {
+      "id": "holdout_scale_compute_allocation",
+      "query": "As the compute budget increases, how should compute be allocated among model size, batch size, and training steps?",
+      "document_id": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+      "include_in_aggregate": true,
+      "judgments": [
+        {
+          "chunk_id": "193b1f8adc6f284a140e04fb0c95ac636370b04f1cee0e579aac3c03349232cb",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "47f252dd0cb8c3ab00f92b2e4777968188ede83c2db742852022c847947719bd",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "4f2a7593330b4e519db736ab97377e133f63097843cc5adc7a6e904125509c8d",
+          "relevance": 1,
+          "rationale": "Explains the critical-batch-size trade-off but does not state the overall allocation of additional compute among model size, batch and serial steps."
+        },
+        {
+          "chunk_id": "50e298c95148b0618c33d65f4b9fb9d4824491da1c7fc4821a8c01e098e7ae4b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5bd7f100f708dcb0f610fb211def2d4095fd752c5a1fabd006073732ec35e36c",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "5cb1cb60b97be2c6f3bb1067b49db27821cefc30bf333f4655476a8ee4ce2a88",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "62fbc6a0af0ada48e693ddde29e957ac5132c572e139ac73d9b39b7aa25fb3ce",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "74dbcdf8bacfdaad689656a7b372cce082ba09895ce909e40fbf2a8acf4a715d",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "77fab3f76f70153a9cac1f7e0836f70735d5114ff81a95af3255c8846c72171e",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "7b35352fa59c268d033bf5126a7d4094ecc876520b1921a15881ff2356e8a05b",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "80c3e8c60fc3cf344ce24745d64be3ac86deee43f9d7ebd5218c7ad08aaf9c74",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8295a6630b3f668ab57be6d3c6da66c6b5d052915be1d679c1e842105b24041a",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "8dc18a5b90ce08be5636efa0fb785d769ffadae8de2efe4ca98f95ac291418a0",
+          "relevance": 3,
+          "rationale": "Directly concludes that most additional compute should increase model size, batch size should also grow, and the number of serial optimization steps should increase negligibly."
+        },
+        {
+          "chunk_id": "92eba056bc490d7b6c42db5420d5c33df48cde6b43ad9b1180c678ae485e71c7",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "b48d291f9c393661934f36904098f5ef1f59ecb7736a305a20378623b0201cef",
+          "relevance": 3,
+          "rationale": "Directly gives the empirical allocation exponents: model size grows roughly as C^0.73, batch size as C^0.24, and steps as C^0.03."
+        },
+        {
+          "chunk_id": "c686ed089bae49f1d310d810f95871371e8874972d024fcb79a702e0da7880a5",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d36cea5f3c2e15925ba5653efa20ef087aaa925eb6a298171756775f14ce2bb3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d726f5918bfa2dc07ee7ce5e19e1387d432f2dcb06bfedd2d96da354dcfb1192",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "d77b2dd689acb7529d85e6498f38acf5f96f61468454a73f8ddf77c59ea94931",
+          "relevance": 3,
+          "rationale": "The figure and accompanying text directly show rapid model-size growth, modest data/batch growth and almost no growth in serial steps."
+        },
+        {
+          "chunk_id": "dd9b27ae3adf8c09e5cbe0d462f2a1a71c9c05a13bd59c7fa8fccc00de1a17c2",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e1c52176e47daacd544cb13b86c22b4bbff0120fa024717b520eafb27c4a4d31",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e1e1ef157cf526388f5944a675661e8dae8549e5f42a4c35dc704ed68be8b45e",
+          "relevance": 2,
+          "rationale": "Summarizes the compute-efficient frontier exponents for model size, batch size and steps, providing strong quantitative support."
+        },
+        {
+          "chunk_id": "e3aada170d657eafb3dc1cecfb31f4c24085f734610550016515720283bd9f81",
+          "relevance": 3,
+          "rationale": "Directly states that most of a large compute increase should go to model size, most of the remaining data growth to larger batches, and only a very small amount to serial training time."
+        },
+        {
+          "chunk_id": "e5044cce73dc56638f06ff80f5f0ac3182eb635acba55558b2ec8f30e5e56fd3",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "e6945aeca3527d263ac70976ed40b0369e966a483f770c0d5376bb6b10fee454",
+          "relevance": 0,
+          "rationale": null
+        },
+        {
+          "chunk_id": "fc1830e97e8afa417143c19d0b6e7cbff8785c13418971112b31457f8a4fae00",
+          "relevance": 0,
+          "rationale": null
+        }
+      ],
+      "tags": [],
+      "notes": null
+    }
+  ]
+}
